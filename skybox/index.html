@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Super Mario Odyssey - Skybox Gallery</title>
+<style>
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background-color: #121212;
+    color: #e6e6e6;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+
+  header {
+    padding: 24px 24px 16px;
+    border-bottom: 1px solid #2a2a2a;
+  }
+
+  header h1 {
+    margin: 0 0 4px;
+    font-size: 1.4rem;
+  }
+
+  header p {
+    margin: 0;
+    color: #999;
+    font-size: 13px;
+  }
+
+  .page-body {
+    padding: 20px 24px 40px;
+  }
+
+  /* --- Connection map (ported from the Apps Script Skybox tab) --- */
+  .connection-map-container {
+    position: relative;
+    background-color: #121212;
+    height: 80vh;
+    min-height: 500px;
+    overflow: hidden;
+    border-radius: 8px;
+    border: 1px solid #333;
+  }
+
+  .map-canvas-viewport {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    overflow: auto;
+  }
+
+  .map-canvas-inner {
+    position: absolute;
+    top: 0;
+    left: 0;
+    transform-origin: 0 0;
+    background-color: #121212;
+    background-image: radial-gradient(#2c2c2c 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+
+  .map-footer-bar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    padding: 12px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-sizing: border-box;
+    pointer-events: none;
+    z-index: 10;
+  }
+
+  .map-footer-badge {
+    background-color: #1e1f22;
+    border: 1px solid #35363c;
+    color: #95969d;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    pointer-events: auto;
+  }
+
+  .map-zoom-control {
+    background-color: #1e1f22;
+    border: 1px solid #35363c;
+    padding: 6px 12px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 12px;
+    color: #95969d;
+    pointer-events: auto;
+  }
+
+  .map-zoom-control input[type="range"] {
+    appearance: none;
+    -webkit-appearance: none;
+    background: #2b2d31;
+    height: 6px;
+    border-radius: 3px;
+    outline: none;
+    width: 100px;
+  }
+
+  .map-zoom-control input[type="range"]::-webkit-slider-thumb {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #5865F2;
+    cursor: pointer;
+  }
+
+  .map-instructions {
+    position: absolute;
+    bottom: 50px;
+    left: 20px;
+    color: #888;
+    font-size: 13px;
+    font-style: italic;
+    pointer-events: none;
+    z-index: 5;
+  }
+
+  .rendered-group-box {
+    position: absolute;
+    background-color: rgba(30, 31, 34, 0.9);
+    border: 1px solid #3f4147;
+    border-radius: 8px;
+    padding: 14px;
+    width: 220px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+  }
+
+  .rendered-group-title {
+    font-weight: 600;
+    font-size: 13px;
+    color: #ffffff;
+    background-color: #2b2d31;
+    padding: 6px 12px;
+    border-radius: 4px;
+    display: inline-block;
+    margin-bottom: 10px;
+    border-left: 4px solid #5865F2;
+  }
+
+  .rendered-node-badge {
+    background-color: #2b2d31;
+    border: 1px solid #3f4147;
+    color: #dbdee1;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    display: block;
+    margin-bottom: 6px;
+  }
+
+  /* --- Image zoom lightbox --- */
+  .zoomable-node-image {
+    cursor: zoom-in;
+    transition: opacity 0.15s ease;
+  }
+
+  .zoomable-node-image:hover {
+    opacity: 0.85;
+  }
+
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-color: rgba(0,0,0,0.75);
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+  }
+
+  .modal-overlay.open { display: flex; }
+
+  .image-lightbox-content {
+    background: none;
+    border: none;
+    box-shadow: none;
+    padding: 0;
+    width: auto;
+    max-width: 92vw;
+    max-height: 92vh;
+    overflow: visible;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+  }
+
+  .image-lightbox-content img {
+    max-width: 92vw;
+    max-height: 85vh;
+    border-radius: 8px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.7);
+    display: block;
+  }
+
+  .image-lightbox-close {
+    position: absolute;
+    top: -36px;
+    right: 0;
+    background: none;
+    border: none;
+    color: #ffffff;
+    font-size: 28px;
+    cursor: pointer;
+    line-height: 1;
+  }
+
+  .image-lightbox-close:hover { color: #a3e6be; }
+
+  .image-lightbox-caption {
+    color: #cccccc;
+    font-size: 13px;
+    margin-top: 10px;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Super Mario Odyssey - Skybox Gallery</h1>
+  <p>All documented skyboxes, one per stage. Click any image to zoom.</p>
+</header>
+
+<div class="page-body">
+  <div class="connection-map-container">
+    <div class="map-canvas-viewport" id="mapCanvasViewport">
+      <div class="map-canvas-inner" id="mapCanvasInner" style="transform: scale(1); width: 12000px; height: 10000px;">
+        <!-- Grid layout of group boxes renders here -->
+      </div>
+    </div>
+    <div class="map-instructions" id="mapInstructions">Loading...</div>
+    <div class="map-footer-bar">
+      <div class="map-footer-badge">Made by FireRisingRaging, Onijuiku, and BaconFearMC</div>
+      <div class="map-zoom-control">
+        <input type="range" min="10" max="100" value="100" id="zoomRange">
+        <span id="zoomLabel">100%</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Image Zoom Lightbox -->
+<div class="modal-overlay" id="imageLightbox">
+  <div class="image-lightbox-content">
+    <button class="image-lightbox-close" id="closeLightboxBtn">&times;</button>
+    <img id="lightboxImg" src="" alt="Zoomed node image" />
+    <div class="image-lightbox-caption" id="lightboxCaption"></div>
+  </div>
+</div>
+
+<script>
+  let staticMapGroups = [];
+  let currentZoom = 1;
+
+  async function loadSkyboxData() {
+    const res = await fetch('skybox.json');
+    const data = await res.json();
+    // Match the app's original shape: { name, nodes: [{ image }] }
+    staticMapGroups = data.map(entry => ({
+      name: entry.name,
+      nodes: [{ image: entry.image || '' }]
+    }));
+    renderCanvasMap();
+  }
+
+  function renderCanvasMap() {
+    const innerCanvas = document.getElementById('mapCanvasInner');
+    const instructions = document.getElementById('mapInstructions');
+    if (!innerCanvas) return;
+
+    innerCanvas.style.width = (12000 / currentZoom) + 'px';
+    innerCanvas.style.height = (10000 / currentZoom) + 'px';
+
+    innerCanvas.innerHTML = '';
+
+    if (staticMapGroups.length === 0) {
+      if (instructions) instructions.textContent = "No connections configured.";
+      return;
+    }
+
+    if (instructions) instructions.textContent = "Skybox Grid.";
+
+    const cols = 6;
+    const startX = 60;
+    const startY = 60;
+    const gapX = 280;
+    const gapY = 220;
+
+    staticMapGroups.forEach((group, index) => {
+      const col = index % cols;
+      const row = Math.floor(index / cols);
+
+      const groupBox = document.createElement('div');
+      groupBox.className = 'rendered-group-box';
+      groupBox.style.left = (startX + (col * gapX)) + 'px';
+      groupBox.style.top = (startY + (row * gapY)) + 'px';
+
+      let nodesHtml = `<div class="rendered-group-title">${group.name}</div>`;
+      group.nodes.forEach(node => {
+        if (node.image && node.image.trim() !== "") {
+          nodesHtml += `<div class="rendered-node-badge"><img src="${node.image}" alt="Node Image" class="zoomable-node-image" data-caption="${group.name}" style="max-width: 100%; height: auto; display: block; border-radius: 4px;" /></div>`;
+        } else {
+          nodesHtml += `<div class="rendered-node-badge" style="color: #777; font-style: italic;">No Image</div>`;
+        }
+      });
+
+      groupBox.innerHTML = nodesHtml;
+      innerCanvas.appendChild(groupBox);
+    });
+  }
+
+  document.addEventListener('input', (e) => {
+    if (e.target && e.target.id === 'zoomRange') {
+      const val = parseInt(e.target.value, 10);
+      currentZoom = val / 100.0;
+      const zoomLabel = document.getElementById('zoomLabel');
+      if (zoomLabel) zoomLabel.textContent = val + '%';
+
+      const innerCanvas = document.getElementById('mapCanvasInner');
+      if (innerCanvas) {
+        innerCanvas.style.transform = `scale(${currentZoom})`;
+        innerCanvas.style.width = (12000 / currentZoom) + 'px';
+        innerCanvas.style.height = (10000 / currentZoom) + 'px';
+      }
+    }
+  });
+
+  // --- IMAGE ZOOM LIGHTBOX ---
+  const imageLightbox = document.getElementById('imageLightbox');
+  const lightboxImg = document.getElementById('lightboxImg');
+  const lightboxCaption = document.getElementById('lightboxCaption');
+
+  document.addEventListener('click', (e) => {
+    const img = e.target.closest('.zoomable-node-image');
+    if (!img) return;
+    lightboxImg.src = img.src;
+    lightboxCaption.textContent = img.dataset.caption || '';
+    imageLightbox.classList.add('open');
+  });
+
+  document.getElementById('closeLightboxBtn').addEventListener('click', () => {
+    imageLightbox.classList.remove('open');
+  });
+
+  imageLightbox.addEventListener('click', (e) => {
+    if (e.target === imageLightbox) imageLightbox.classList.remove('open');
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && imageLightbox.classList.contains('open')) {
+      imageLightbox.classList.remove('open');
+    }
+  });
+
+  loadSkyboxData();
+</script>
+
+</body>
+</html>
