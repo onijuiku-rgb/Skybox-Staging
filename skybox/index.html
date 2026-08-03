@@ -142,7 +142,8 @@
     display: block;
     margin-bottom: 10px;
     border-left: 4px solid #5865F2;
-    overflow-wrap: break-word;
+    white-space: nowrap;
+    overflow: hidden;
   }
 
   .rendered-node-badge {
@@ -304,8 +305,7 @@
       groupBox.style.left = (startX + (col * gapX)) + 'px';
       groupBox.style.top = (startY + (row * gapY)) + 'px';
 
-      const wrappedName = group.name.replace(/([a-z0-9])([A-Z])/g, '$1<wbr>$2');
-      let nodesHtml = `<div class="rendered-group-title">${wrappedName}</div>`;
+      let nodesHtml = `<div class="rendered-group-title">${group.name}</div>`;
       group.nodes.forEach(node => {
         if (node.image && node.image.trim() !== "") {
           nodesHtml += `<div class="rendered-node-badge"><img src="${node.image}" alt="Node Image" class="zoomable-node-image" data-caption="${group.name}" style="max-width: 100%; height: auto; display: block; border-radius: 4px;" /></div>`;
@@ -316,6 +316,25 @@
 
       groupBox.innerHTML = nodesHtml;
       innerCanvas.appendChild(groupBox);
+    });
+
+    shrinkTitlesToFit();
+  }
+
+  // Auto-shrinks each title's font size until it fits on one line, so
+  // long camelCase names never wrap and never overlap neighboring cards.
+  function shrinkTitlesToFit() {
+    const titles = document.querySelectorAll('.rendered-group-title');
+    const minFontSize = 9;
+
+    titles.forEach(title => {
+      let fontSize = 13;
+      title.style.fontSize = fontSize + 'px';
+
+      while (title.scrollWidth > title.clientWidth && fontSize > minFontSize) {
+        fontSize -= 0.5;
+        title.style.fontSize = fontSize + 'px';
+      }
     });
   }
 
