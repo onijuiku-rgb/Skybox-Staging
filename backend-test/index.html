@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Firebase Test - CapKingdom Prototype</title>
+<title>Firebase Test - All Kingdoms Prototype</title>
 <style>
   * { box-sizing: border-box; }
 
@@ -16,7 +16,7 @@
   }
 
   h1 { font-size: 1.3rem; margin: 0 0 4px; }
-  p.subtitle { color: #999; margin: 0 0 20px; font-size: 13px; }
+  p.subtitle { color: #999; margin: 0 0 16px; font-size: 13px; }
 
   #statusLine {
     font-size: 12px;
@@ -36,18 +36,48 @@
     border-radius: 6px;
     font-size: 13px;
     cursor: pointer;
-    margin-bottom: 20px;
   }
 
   button:hover { border-color: #5865F2; }
 
-  /* 136 columns needs horizontal scrolling - this wrapper is what scrolls,
-     not the page itself, so the "Subarea" column can stay visible via
-     position: sticky (see th:first-child / td:first-child below). */
+  #seedBtn { margin-bottom: 20px; }
+
+  /* ===================== KINGDOM TABS ===================== */
+  .tab-bar {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    padding-bottom: 8px;
+    margin-bottom: 12px;
+    border-bottom: 1px solid #2a2a2a;
+  }
+
+  .tab-btn {
+    background-color: #1e1f22;
+    color: #aaa;
+    border: 1px solid #333;
+    padding: 8px 14px;
+    border-radius: 6px;
+    font-size: 13px;
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .tab-btn:hover { border-color: #5865F2; }
+
+  .tab-btn.active {
+    background-color: #5865F2;
+    color: #fff;
+    border-color: #5865F2;
+  }
+
+  /* ===================== MAIN STATUS TABLE ===================== */
   .table-scroll-wrapper {
     overflow-x: auto;
     border: 1px solid #2a2a2a;
     border-radius: 8px;
+    margin-bottom: 30px;
   }
 
   .table-scroll-wrapper::-webkit-scrollbar { height: 12px; }
@@ -61,7 +91,7 @@
 
   table {
     border-collapse: collapse;
-    width: max-content; /* let the table grow as wide as it needs to fit every column */
+    width: max-content;
   }
 
   th, td {
@@ -98,28 +128,154 @@
     cursor: pointer;
   }
 
-  /* Status colors - same meanings as the Apps Script version's dropdown pills */
   select.status-good { background-color: #1c5c34; border-color: #1c5c34; }
   select.status-bad { background-color: #5c1c1c; border-color: #5c1c1c; }
   select.status-warn { background-color: #5c4a1c; border-color: #5c4a1c; }
   select.status-neutral { background-color: #2b2d31; }
+
+  /* ===================== SUMMARY / ISSUES SECTION ===================== */
+  .summary-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+
+  .summary-header h2 {
+    margin: 0;
+    font-size: 1.1rem;
+    color: #fbe38e;
+  }
+
+  .progress-badge {
+    background-color: #1a1a1a;
+    border: 1px solid #3d3d3d;
+    color: #a3e6be;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .progress-badge.complete { color: #17c964; border-color: #17c964; }
+
+  .summary-controls {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .summary-search-input, .summary-select-filter {
+    background-color: #1a1a1a;
+    border: 1px solid #3d3d3d;
+    color: #ffffff;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    outline: none;
+  }
+
+  .summary-search-input:focus, .summary-select-filter:focus { border-color: #189844; }
+
+  /* Filter checkboxes - toggled open/closed via the "Filters" button */
+  #filterPanel {
+    display: none;
+    flex-wrap: wrap;
+    gap: 14px;
+    background-color: #1a1a1a;
+    border: 1px solid #2a2a2a;
+    border-radius: 6px;
+    padding: 12px 16px;
+    margin-bottom: 14px;
+    font-size: 12px;
+  }
+
+  #filterPanel.open { display: flex; }
+
+  #filterPanel label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #ccc;
+    cursor: pointer;
+  }
+
+  .summary-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .summary-table th {
+    text-align: left;
+    font-size: 12px;
+    color: #999;
+    border-bottom: 1px solid #2a2a2a;
+    padding: 8px 10px;
+    background: none;
+  }
+
+  .summary-table td {
+    padding: 8px 10px;
+    border-bottom: 1px solid #222;
+    font-size: 13px;
+    white-space: normal;
+  }
+
+  .summary-table .status-text-bad { color: #f87171; font-weight: 600; }
+  .summary-table .status-text-warn { color: #fbe38e; font-weight: 600; }
+  .summary-table .status-text-neutral { color: #999; font-style: italic; }
+
+  #emptySummary {
+    color: #777;
+    font-size: 13px;
+    padding: 16px 0;
+    display: none;
+  }
 </style>
 </head>
 <body>
 
-<h1>Firebase Test - CapKingdom Prototype</h1>
-<p class="subtitle">Real CapKingdom data - all 6 subareas x all 136 skyboxes, reading and writing live from Firestore.</p>
+<h1>Firebase Test - All Kingdoms Prototype</h1>
+<p class="subtitle">Real spreadsheet data, all 17 Kingdoms, reading and writing live from Firestore.</p>
 
-<div id="statusLine">Connecting to Firestore...</div>
+<div id="statusLine">Loading Kingdom list...</div>
 
-<button id="seedBtn">Seed Real CapKingdom Data (only needed once)</button>
+<button id="seedBtn">Seed All Kingdoms (real data - only needed once)</button>
+
+<div class="tab-bar" id="tabBar"></div>
 
 <div class="table-scroll-wrapper">
-  <table id="capTable">
-    <thead id="capTableHead"></thead>
-    <tbody id="capTableBody"></tbody>
+  <table id="mainTable">
+    <thead id="mainTableHead"></thead>
+    <tbody id="mainTableBody"></tbody>
   </table>
 </div>
+
+<div class="summary-header">
+  <h2>&#9888; Issues &amp; Actionable Skyboxes (<span id="activeKingdomName">-</span>)</h2>
+  <div class="progress-badge" id="progressBadge"></div>
+  <div class="summary-controls">
+    <button id="toggleFiltersBtn">Filters</button>
+    <select class="summary-select-filter" id="subareaFilterSelect">
+      <option value="">All Subareas</option>
+    </select>
+    <input type="text" class="summary-search-input" id="searchInput" placeholder="Search subarea or skybox...">
+  </div>
+</div>
+
+<div id="filterPanel"></div>
+
+<table class="summary-table">
+  <thead>
+    <tr><th>Loading Zone (Subarea)</th><th>Skybox</th><th>Status / Action</th></tr>
+  </thead>
+  <tbody id="summaryTableBody"></tbody>
+</table>
+<div id="emptySummary">Nothing matches the current filters.</div>
 
 <script type="module">
   // ===================== FIREBASE SETUP =====================
@@ -144,999 +300,8 @@
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
 
-  // ===================== REAL SEED DATA =====================
-  // Pulled directly from your actual spreadsheet's "Cap Kingdom" tab:
-  // every subarea, every skybox column, and whatever status was already
-  // filled in. The "Seed" button below writes this into Firestore -
-  // click it once and your real progress becomes the live data.
-  const REAL_DATA = {
-  "subareas": [
-    "HomeStage",
-    "Tower",
-    "Push Block Platforming",
-    "Flying over the Posion Tide",
-    "The Frog Pond",
-    "Rolling On and On"
-  ],
-  "skyboxes": [
-    "CapWorldHomeStage",
-    "WaterFallWorldHomeStage",
-    "SandWorldHomeStage",
-    "LakeWorldHomeStage",
-    "ForestWorldHomeStage",
-    "CloudWorldHomeStage",
-    "ClashWorldHomeStage",
-    "CityWorldHomeStage",
-    "SnowWorldHomeStage",
-    "SeaWorldHomeStage",
-    "LavaWorldHomeStage",
-    "BossRaidWorldHomeStage",
-    "SkyWorldHomeStage",
-    "MoonWorldHomeStage",
-    "PeachWorldHomeStage",
-    "Special1WorldHomeStage",
-    "Special2WorldHomeStage",
-    "PushBlockExStage",
-    "PoisonWaveExStage",
-    "FrogSearchExStage",
-    "WanwanClashExStage",
-    "WindBlowExStage",
-    "CapAppearExStage",
-    "TrexPoppunExStage",
-    "SandWorldKillerExStage",
-    "SandWorldSphinxExStage",
-    "SandWorldMeganeExStage",
-    "SandWorldRotateExStage",
-    "RocketFlowerExStage",
-    "MeganeLiftExStage",
-    "SandWorldPressExStage",
-    "SandWorldVibrationStage",
-    "WaterTubeExStage",
-    "TrampolineWallCatchExStage",
-    "FastenerExStage",
-    "GotogotonExStage",
-    "FrogPoisonExStage",
-    "ForestWorldWaterExStage",
-    "RailCollisionExStage",
-    "ShootingElevatorExStage",
-    "FogMountainExStage",
-    "ForestWorldBonusStage",
-    "PackunPoisonExStage",
-    "KillerRoadExStage",
-    "ForestWorldCloudBonusExStage",
-    "AnimalChaseExStage",
-    "ForestWorldWoodsStage",
-    "FukuwaraiKuriboStage",
-    "ImomuPoisonExStage",
-    "JangoExStage",
-    "ElectricWireExStage",
-    "CapRotatePackunExStage",
-    "TrexBikeExStage",
-    "SwingSteelExStage",
-    "DonsukeExStage",
-    "CityPeopleRoadStage",
-    "PoleKillerExStage",
-    "PoleGrabCeilExStage",
-    "ShootingCityExStage",
-    "BikeSteelExStage",
-    "IceWaterDashExStage",
-    "IceWaterBlockExStage",
-    "ByugoPuzzleExStage",
-    "IceWalkerExStage",
-    "SnowWorldCloudBonusStage",
-    "KillerRailCollisionExStage",
-    "SnowWorldLobbyExStage",
-    "WaterValleyExStage",
-    "CloudExStage",
-    "TogezoRotateExStage",
-    "SenobiTowerExStage",
-    "ReflectBombExStage",
-    "SeaWorldUtsuboCaveStage",
-    "SeaWorldSneakingManStage",
-    "SeaWorldVibrationStage",
-    "ForkExStage",
-    "CapAppearLavaLiftExStage",
-    "GabuzouClockExStage",
-    "LavaWorldBubbleLaneExStage",
-    "LavaWorldExcavationExStage",
-    "LavaWorldUpDownExStage",
-    "LavaWorldClockExStage",
-    "LavaWorldFenceLiftExStage",
-    "LavaWorldTreasureStage",
-    "LavaBonus1Zone",
-    "BullRunExStage",
-    "DotTowerExStage",
-    "JizoSwitchExStage",
-    "TsukkunRotateExStage",
-    "TsukkunClimbExStage",
-    "SkyWorldCloudBonusExStage",
-    "SkyWorldTreasureStage",
-    "MoonAthleticExStage",
-    "MoonWorldSpinxRoom",
-    "YoshiCloudExStage",
-    "DotHardExStage",
-    "FukuwaraiMarioStage",
-    "PeachWorldCastleStage",
-    "PeachWorldPictureBossForestStage",
-    "PeachWorldPictureBossKnuckleStage",
-    "PeachWorldPictureBossMagmaStage",
-    "PeachWorldPictureMofumofuStage",
-    "PeachWorldPictureBossRaidStage",
-    "PeachWorldPictureGiantWanderBossStage",
-    "Special1WorldTowerStackerStage",
-    "Special1WorldTowerBombTailStage",
-    "Special1WorldTowerFireBlowerStage",
-    "Special1WorldTowerCapThrowerStage",
-    "BikeSteelNoCapExStage",
-    "PackunPoisonNoCapExStage",
-    "KillerRoadNoCapExStage",
-    "ShootingCityYoshiExStage",
-    "SenobiTowerYoshiExStage",
-    "LavaWorldUpDownYoshiExStage",
-    "Special2WorldLavaStage",
-    "ForestWorldWoodsTreasureStage",
-    "KaronWingTowerStage",
-    "CityWorldFactoryStage",
-    "ForestWorldBossStage",
-    "ForestWorldTowerStage",
-    "MoonWorldCaptureParadeStage",
-    "MoonWorldWeddingRoomStage",
-    "RevengeForestBossStage",
-    "RevengeBossKnuckleStage",
-    "RevengeBossMagmaStage",
-    "RevengeBossRaidStage",
-    "RevengeGiantWanderBossStage",
-    "RevengeMofumofuStage",
-    "SandWorldPyramid000Stage",
-    "SandWorldPyramid001Stage",
-    "SandWorldUnderground000Stage",
-    "SandWorldUnderground001Stage",
-    "SnowWorldTownStage",
-    "SnowWorldLobby000Stage",
-    "Special2WorldCloudStage",
-    "Special2WorldKoopaStage"
-  ],
-  "data": {
-    "HomeStage": {
-      "CapWorldHomeStage": "Good to Use",
-      "WaterFallWorldHomeStage": "Good to Use",
-      "SandWorldHomeStage": "Good to Use",
-      "LakeWorldHomeStage": "Good to Use",
-      "ForestWorldHomeStage": "Good to Use",
-      "CloudWorldHomeStage": "Looks Bad - Don't Use",
-      "ClashWorldHomeStage": "Good to Use",
-      "CityWorldHomeStage": "Looks Bad - Don't Use",
-      "SnowWorldHomeStage": "Good to Use",
-      "SeaWorldHomeStage": "Good to Use",
-      "LavaWorldHomeStage": "Lags Kingdom",
-      "BossRaidWorldHomeStage": "Good to Use",
-      "SkyWorldHomeStage": "Good to Use",
-      "MoonWorldHomeStage": "Looks Bad - Don't Use",
-      "PeachWorldHomeStage": "Good to Use",
-      "Special1WorldHomeStage": "Good to Use",
-      "Special2WorldHomeStage": "Good to Use",
-      "PushBlockExStage": "Good to Use",
-      "PoisonWaveExStage": "Good to Use",
-      "FrogSearchExStage": "Good to Use",
-      "WanwanClashExStage": "Good to Use",
-      "WindBlowExStage": "Good to Use",
-      "CapAppearExStage": "Good to Use",
-      "TrexPoppunExStage": "Good to Use",
-      "SandWorldKillerExStage": "Good to Use",
-      "SandWorldSphinxExStage": "Good to Use",
-      "SandWorldMeganeExStage": "Good to Use",
-      "SandWorldRotateExStage": "Good to Use",
-      "RocketFlowerExStage": "Good to Use",
-      "MeganeLiftExStage": "Good to Use",
-      "SandWorldPressExStage": "Good to Use",
-      "SandWorldVibrationStage": "Good to Use",
-      "WaterTubeExStage": "Good to Use",
-      "TrampolineWallCatchExStage": "Good to Use",
-      "FastenerExStage": "Looks Bad - Don't Use",
-      "GotogotonExStage": "Good to Use",
-      "FrogPoisonExStage": "Good to Use",
-      "ForestWorldWaterExStage": "Good to Use",
-      "RailCollisionExStage": "Good to Use",
-      "ShootingElevatorExStage": "Good to Use",
-      "FogMountainExStage": "Looks Bad - Don't Use",
-      "ForestWorldBonusStage": "Good to Use",
-      "PackunPoisonExStage": "Good to Use",
-      "KillerRoadExStage": "Good to Use",
-      "ForestWorldCloudBonusExStage": "Good to Use",
-      "AnimalChaseExStage": "Good to Use",
-      "ForestWorldWoodsStage": "Good to Use",
-      "FukuwaraiKuriboStage": "Looks Bad - Don't Use",
-      "ImomuPoisonExStage": "Good to Use",
-      "JangoExStage": "Looks Bad - Don't Use",
-      "ElectricWireExStage": "Looks Bad - Don't Use",
-      "CapRotatePackunExStage": "Good to Use",
-      "TrexBikeExStage": "Good to Use",
-      "SwingSteelExStage": "Good to Use",
-      "DonsukeExStage": "Good But Dark",
-      "CityPeopleRoadStage": "Good to Use",
-      "PoleKillerExStage": "Good to Use",
-      "PoleGrabCeilExStage": "Good But Bright",
-      "ShootingCityExStage": "Lags Kingdom",
-      "BikeSteelExStage": "Good to Use",
-      "IceWaterDashExStage": "Good to Use",
-      "IceWaterBlockExStage": "Good but Foggy",
-      "ByugoPuzzleExStage": "Good to Use",
-      "IceWalkerExStage": "Looks Bad - Don't Use",
-      "SnowWorldCloudBonusStage": "Good to Use",
-      "KillerRailCollisionExStage": "Good to Use",
-      "SnowWorldLobbyExStage": "Good to Use",
-      "WaterValleyExStage": "Looks Bad - Don't Use",
-      "CloudExStage": "Good to Use",
-      "TogezoRotateExStage": "Good to Use",
-      "SenobiTowerExStage": "Good(Foggy)",
-      "ReflectBombExStage": "Good to Use",
-      "SeaWorldUtsuboCaveStage": "Good(Foggy)",
-      "SeaWorldSneakingManStage": "Good to Use",
-      "SeaWorldVibrationStage": "Good to Use",
-      "ForkExStage": "Lags Kingdom",
-      "CapAppearLavaLiftExStage": "Lags Kingdom",
-      "GabuzouClockExStage": "Lags Kingdom",
-      "LavaWorldBubbleLaneExStage": "Lags Kingdom",
-      "LavaWorldExcavationExStage": "Lags Kingdom",
-      "LavaWorldUpDownExStage": "Lags Kingdom",
-      "LavaWorldClockExStage": "Good(foggy)",
-      "LavaWorldFenceLiftExStage": "Lags Kingdom",
-      "LavaWorldTreasureStage": "Good to Use",
-      "LavaBonus1Zone": "Good to Use",
-      "BullRunExStage": "Good to Use",
-      "DotTowerExStage": "Good(Slightly Bright)",
-      "JizoSwitchExStage": "Good to Use",
-      "TsukkunRotateExStage": "Good to Use",
-      "TsukkunClimbExStage": "Good to Use",
-      "SkyWorldCloudBonusExStage": "Good to Use",
-      "SkyWorldTreasureStage": "Good to Use",
-      "MoonAthleticExStage": "Good to Use",
-      "MoonWorldSpinxRoom": "Good to Use",
-      "YoshiCloudExStage": "Looks Bad - Don't Use",
-      "DotHardExStage": "Good to Use",
-      "FukuwaraiMarioStage": "Looks Bad - Don't Use",
-      "PeachWorldCastleStage": "Lags Kingdom",
-      "PeachWorldPictureBossForestStage": "Good to Use",
-      "PeachWorldPictureBossKnuckleStage": "Good to Use",
-      "PeachWorldPictureBossMagmaStage": "Good to Use",
-      "PeachWorldPictureMofumofuStage": "Good to Use",
-      "PeachWorldPictureBossRaidStage": "Good to Use",
-      "PeachWorldPictureGiantWanderBossStage": "Good to Use",
-      "Special1WorldTowerStackerStage": "Good(Dark)",
-      "Special1WorldTowerBombTailStage": "Good(Dark)",
-      "Special1WorldTowerFireBlowerStage": "Good(Dark)",
-      "Special1WorldTowerCapThrowerStage": "Good(Dark)",
-      "BikeSteelNoCapExStage": "Good to Use",
-      "PackunPoisonNoCapExStage": "Good to Use",
-      "KillerRoadNoCapExStage": "Good to Use",
-      "ShootingCityYoshiExStage": "Lags Kingdom",
-      "SenobiTowerYoshiExStage": "Good(Foggy)",
-      "LavaWorldUpDownYoshiExStage": "Lags Kingdom",
-      "Special2WorldLavaStage": "Good to Use",
-      "ForestWorldWoodsTreasureStage": "Looks Bad - Don't Use",
-      "KaronWingTowerStage": "Good to Use",
-      "CityWorldFactoryStage": "Good to Use",
-      "ForestWorldBossStage": "Good to Use",
-      "ForestWorldTowerStage": "Good to Use",
-      "MoonWorldCaptureParadeStage": "Good to Use",
-      "MoonWorldWeddingRoomStage": "Good to Use",
-      "RevengeForestBossStage": "Good to Use",
-      "RevengeBossKnuckleStage": "Good to Use",
-      "RevengeBossMagmaStage": "Lags Kingdom",
-      "RevengeBossRaidStage": "Good to Use",
-      "RevengeGiantWanderBossStage": "Good to Use",
-      "RevengeMofumofuStage": "Lags Kingdom",
-      "SandWorldPyramid000Stage": "Looks Bad - Don't Use",
-      "SandWorldPyramid001Stage": "Looks Bad - Don't Use",
-      "SandWorldUnderground000Stage": "Good to Use",
-      "SandWorldUnderground001Stage": "Good to Use",
-      "SnowWorldTownStage": "Good to Use",
-      "SnowWorldLobby000Stage": "Good to Use",
-      "Special2WorldCloudStage": "Good to Use",
-      "Special2WorldKoopaStage": "Good to Use"
-    },
-    "Tower": {
-      "CapWorldHomeStage": "",
-      "WaterFallWorldHomeStage": "",
-      "SandWorldHomeStage": "",
-      "LakeWorldHomeStage": "",
-      "ForestWorldHomeStage": "",
-      "CloudWorldHomeStage": "",
-      "ClashWorldHomeStage": "",
-      "CityWorldHomeStage": "",
-      "SnowWorldHomeStage": "",
-      "SeaWorldHomeStage": "",
-      "LavaWorldHomeStage": "",
-      "BossRaidWorldHomeStage": "",
-      "SkyWorldHomeStage": "",
-      "MoonWorldHomeStage": "",
-      "PeachWorldHomeStage": "",
-      "Special1WorldHomeStage": "",
-      "Special2WorldHomeStage": "",
-      "PushBlockExStage": "",
-      "PoisonWaveExStage": "",
-      "FrogSearchExStage": "",
-      "WanwanClashExStage": "",
-      "WindBlowExStage": "",
-      "CapAppearExStage": "",
-      "TrexPoppunExStage": "",
-      "SandWorldKillerExStage": "",
-      "SandWorldSphinxExStage": "",
-      "SandWorldMeganeExStage": "",
-      "SandWorldRotateExStage": "",
-      "RocketFlowerExStage": "",
-      "MeganeLiftExStage": "",
-      "SandWorldPressExStage": "",
-      "SandWorldVibrationStage": "",
-      "WaterTubeExStage": "",
-      "TrampolineWallCatchExStage": "",
-      "FastenerExStage": "",
-      "GotogotonExStage": "",
-      "FrogPoisonExStage": "",
-      "ForestWorldWaterExStage": "",
-      "RailCollisionExStage": "",
-      "ShootingElevatorExStage": "",
-      "FogMountainExStage": "",
-      "ForestWorldBonusStage": "",
-      "PackunPoisonExStage": "",
-      "KillerRoadExStage": "",
-      "ForestWorldCloudBonusExStage": "",
-      "AnimalChaseExStage": "",
-      "ForestWorldWoodsStage": "",
-      "FukuwaraiKuriboStage": "",
-      "ImomuPoisonExStage": "",
-      "JangoExStage": "",
-      "ElectricWireExStage": "",
-      "CapRotatePackunExStage": "",
-      "TrexBikeExStage": "",
-      "SwingSteelExStage": "",
-      "DonsukeExStage": "",
-      "CityPeopleRoadStage": "",
-      "PoleKillerExStage": "",
-      "PoleGrabCeilExStage": "",
-      "ShootingCityExStage": "",
-      "BikeSteelExStage": "",
-      "IceWaterDashExStage": "",
-      "IceWaterBlockExStage": "",
-      "ByugoPuzzleExStage": "",
-      "IceWalkerExStage": "",
-      "SnowWorldCloudBonusStage": "",
-      "KillerRailCollisionExStage": "",
-      "SnowWorldLobbyExStage": "",
-      "WaterValleyExStage": "",
-      "CloudExStage": "",
-      "TogezoRotateExStage": "",
-      "SenobiTowerExStage": "",
-      "ReflectBombExStage": "",
-      "SeaWorldUtsuboCaveStage": "",
-      "SeaWorldSneakingManStage": "",
-      "SeaWorldVibrationStage": "",
-      "ForkExStage": "",
-      "CapAppearLavaLiftExStage": "",
-      "GabuzouClockExStage": "",
-      "LavaWorldBubbleLaneExStage": "",
-      "LavaWorldExcavationExStage": "",
-      "LavaWorldUpDownExStage": "",
-      "LavaWorldClockExStage": "",
-      "LavaWorldFenceLiftExStage": "",
-      "LavaWorldTreasureStage": "",
-      "LavaBonus1Zone": "",
-      "BullRunExStage": "",
-      "DotTowerExStage": "",
-      "JizoSwitchExStage": "",
-      "TsukkunRotateExStage": "",
-      "TsukkunClimbExStage": "",
-      "SkyWorldCloudBonusExStage": "",
-      "SkyWorldTreasureStage": "",
-      "MoonAthleticExStage": "",
-      "MoonWorldSpinxRoom": "",
-      "YoshiCloudExStage": "",
-      "DotHardExStage": "",
-      "FukuwaraiMarioStage": "",
-      "PeachWorldCastleStage": "",
-      "PeachWorldPictureBossForestStage": "",
-      "PeachWorldPictureBossKnuckleStage": "",
-      "PeachWorldPictureBossMagmaStage": "",
-      "PeachWorldPictureMofumofuStage": "",
-      "PeachWorldPictureBossRaidStage": "",
-      "PeachWorldPictureGiantWanderBossStage": "",
-      "Special1WorldTowerStackerStage": "",
-      "Special1WorldTowerBombTailStage": "",
-      "Special1WorldTowerFireBlowerStage": "",
-      "Special1WorldTowerCapThrowerStage": "",
-      "BikeSteelNoCapExStage": "",
-      "PackunPoisonNoCapExStage": "",
-      "KillerRoadNoCapExStage": "",
-      "ShootingCityYoshiExStage": "",
-      "SenobiTowerYoshiExStage": "",
-      "LavaWorldUpDownYoshiExStage": "",
-      "Special2WorldLavaStage": "",
-      "ForestWorldWoodsTreasureStage": "",
-      "KaronWingTowerStage": "",
-      "CityWorldFactoryStage": "",
-      "ForestWorldBossStage": "",
-      "ForestWorldTowerStage": "",
-      "MoonWorldCaptureParadeStage": "",
-      "MoonWorldWeddingRoomStage": "",
-      "RevengeForestBossStage": "",
-      "RevengeBossKnuckleStage": "",
-      "RevengeBossMagmaStage": "",
-      "RevengeBossRaidStage": "",
-      "RevengeGiantWanderBossStage": "",
-      "RevengeMofumofuStage": "",
-      "SandWorldPyramid000Stage": "",
-      "SandWorldPyramid001Stage": "",
-      "SandWorldUnderground000Stage": "",
-      "SandWorldUnderground001Stage": "",
-      "SnowWorldTownStage": "",
-      "SnowWorldLobby000Stage": "",
-      "Special2WorldCloudStage": "",
-      "Special2WorldKoopaStage": ""
-    },
-    "Push Block Platforming": {
-      "CapWorldHomeStage": "Good to Use",
-      "WaterFallWorldHomeStage": "Good to Use",
-      "SandWorldHomeStage": "Good to Use",
-      "LakeWorldHomeStage": "Good to Use",
-      "ForestWorldHomeStage": "Good to Use",
-      "CloudWorldHomeStage": "Good to Use",
-      "ClashWorldHomeStage": "Good to Use",
-      "CityWorldHomeStage": "Good to Use",
-      "SnowWorldHomeStage": "Good to Use",
-      "SeaWorldHomeStage": "Good to Use",
-      "LavaWorldHomeStage": "Good to Use",
-      "BossRaidWorldHomeStage": "Looks Bad - Don't Use",
-      "SkyWorldHomeStage": "Good to Use",
-      "MoonWorldHomeStage": "Good to Use",
-      "PeachWorldHomeStage": "Good to Use",
-      "Special1WorldHomeStage": "Good to Use",
-      "Special2WorldHomeStage": "Good to Use",
-      "PushBlockExStage": "Good to Use",
-      "PoisonWaveExStage": "Good to Use",
-      "FrogSearchExStage": "Good to Use",
-      "WanwanClashExStage": "Good to Use",
-      "WindBlowExStage": "Good to Use",
-      "CapAppearExStage": "Good to Use",
-      "TrexPoppunExStage": "Good to Use",
-      "SandWorldKillerExStage": "Good to Use",
-      "SandWorldSphinxExStage": "Good to Use",
-      "SandWorldMeganeExStage": "Good to Use",
-      "SandWorldRotateExStage": "Good to Use",
-      "RocketFlowerExStage": "Good to Use",
-      "MeganeLiftExStage": "Good to Use",
-      "SandWorldPressExStage": "Good to Use",
-      "SandWorldVibrationStage": "Good to Use",
-      "WaterTubeExStage": "Good to Use",
-      "TrampolineWallCatchExStage": "Looks Bad - Don't Use",
-      "FastenerExStage": "Looks Bad - Don't Use",
-      "GotogotonExStage": "Good to Use",
-      "FrogPoisonExStage": "Good to Use",
-      "ForestWorldWaterExStage": "Good to Use",
-      "RailCollisionExStage": "Good to Use",
-      "ShootingElevatorExStage": "Good to Use",
-      "FogMountainExStage": "Looks Bad - Don't Use",
-      "ForestWorldBonusStage": "Good to Use",
-      "PackunPoisonExStage": "Good to Use",
-      "KillerRoadExStage": "Good to Use",
-      "ForestWorldCloudBonusExStage": "Good to Use",
-      "AnimalChaseExStage": "Good to Use",
-      "ForestWorldWoodsStage": "Good to Use",
-      "FukuwaraiKuriboStage": "Good to Use",
-      "ImomuPoisonExStage": "Good to Use",
-      "JangoExStage": "Good to Use",
-      "ElectricWireExStage": "Good to Use",
-      "CapRotatePackunExStage": "Good to Use",
-      "TrexBikeExStage": "Good to Use",
-      "SwingSteelExStage": "Good to Use",
-      "DonsukeExStage": "Good to Use",
-      "CityPeopleRoadStage": "Good to Use",
-      "PoleKillerExStage": "Good to Use",
-      "PoleGrabCeilExStage": "Good to Use",
-      "ShootingCityExStage": "Lags Kingdom",
-      "BikeSteelExStage": "Good to Use",
-      "IceWaterDashExStage": "Good to Use",
-      "IceWaterBlockExStage": "Good but Foggy",
-      "ByugoPuzzleExStage": "Good to Use",
-      "IceWalkerExStage": "Good to Use",
-      "SnowWorldCloudBonusStage": "Good to Use",
-      "KillerRailCollisionExStage": "Good to Use",
-      "SnowWorldLobbyExStage": "Good to Use",
-      "WaterValleyExStage": "Looks Bad - Don't Use",
-      "CloudExStage": "Good to Use",
-      "TogezoRotateExStage": "Good to Use",
-      "SenobiTowerExStage": "Good(Foggy)",
-      "ReflectBombExStage": "Good to Use",
-      "SeaWorldUtsuboCaveStage": "Good to Use",
-      "SeaWorldSneakingManStage": "Good to Use",
-      "SeaWorldVibrationStage": "Good to Use",
-      "ForkExStage": "Good to Use",
-      "CapAppearLavaLiftExStage": "Good to Use",
-      "GabuzouClockExStage": "Good to Use",
-      "LavaWorldBubbleLaneExStage": "Looks Bad - Don't Use",
-      "LavaWorldExcavationExStage": "Good to Use",
-      "LavaWorldUpDownExStage": "Good to Use",
-      "LavaWorldClockExStage": "Good to Use",
-      "LavaWorldFenceLiftExStage": "Good to Use",
-      "LavaWorldTreasureStage": "Good to Use",
-      "LavaBonus1Zone": "Good to Use",
-      "BullRunExStage": "Good to Use",
-      "DotTowerExStage": "Good to Use",
-      "JizoSwitchExStage": "Good to Use",
-      "TsukkunRotateExStage": "Good to Use",
-      "TsukkunClimbExStage": "Good to Use",
-      "SkyWorldCloudBonusExStage": "Good to Use",
-      "SkyWorldTreasureStage": "Good to Use",
-      "MoonAthleticExStage": "Good to Use",
-      "MoonWorldSpinxRoom": "Good to Use",
-      "YoshiCloudExStage": "Good to Use",
-      "DotHardExStage": "Good to Use",
-      "FukuwaraiMarioStage": "Good to Use",
-      "PeachWorldCastleStage": "Lags Kingdom",
-      "PeachWorldPictureBossForestStage": "Good to Use",
-      "PeachWorldPictureBossKnuckleStage": "Good to Use",
-      "PeachWorldPictureBossMagmaStage": "Good to Use",
-      "PeachWorldPictureMofumofuStage": "Good to Use",
-      "PeachWorldPictureBossRaidStage": "Good to Use",
-      "PeachWorldPictureGiantWanderBossStage": "Good to Use",
-      "Special1WorldTowerStackerStage": "Good to Use",
-      "Special1WorldTowerBombTailStage": "Good to Use",
-      "Special1WorldTowerFireBlowerStage": "Good to Use",
-      "Special1WorldTowerCapThrowerStage": "Good to Use",
-      "BikeSteelNoCapExStage": "Good to Use",
-      "PackunPoisonNoCapExStage": "Good to Use",
-      "KillerRoadNoCapExStage": "Good to Use",
-      "ShootingCityYoshiExStage": "Lags Kingdom",
-      "SenobiTowerYoshiExStage": "Good to Use",
-      "LavaWorldUpDownYoshiExStage": "Good to Use",
-      "Special2WorldLavaStage": "Good to Use",
-      "ForestWorldWoodsTreasureStage": "Good to Use",
-      "KaronWingTowerStage": "Good to Use",
-      "CityWorldFactoryStage": "Good to Use",
-      "ForestWorldBossStage": "Good to Use",
-      "ForestWorldTowerStage": "Good to Use",
-      "MoonWorldCaptureParadeStage": "Good to Use",
-      "MoonWorldWeddingRoomStage": "Good to Use",
-      "RevengeForestBossStage": "Good to Use",
-      "RevengeBossKnuckleStage": "Good to Use",
-      "RevengeBossMagmaStage": "Good to Use",
-      "RevengeBossRaidStage": "Good to Use",
-      "RevengeGiantWanderBossStage": "Good to Use",
-      "RevengeMofumofuStage": "Lags Kingdom",
-      "SandWorldPyramid000Stage": "Looks Bad - Don't Use",
-      "SandWorldPyramid001Stage": "Looks Bad - Don't Use",
-      "SandWorldUnderground000Stage": "Good to Use",
-      "SandWorldUnderground001Stage": "Good to Use",
-      "SnowWorldTownStage": "Good to Use",
-      "SnowWorldLobby000Stage": "Good to Use",
-      "Special2WorldCloudStage": "Good to Use",
-      "Special2WorldKoopaStage": "Good to Use"
-    },
-    "Flying over the Posion Tide": {
-      "CapWorldHomeStage": "Good to Use",
-      "WaterFallWorldHomeStage": "Good to Use",
-      "SandWorldHomeStage": "Good to Use",
-      "LakeWorldHomeStage": "Good to Use",
-      "ForestWorldHomeStage": "Good to Use",
-      "CloudWorldHomeStage": "Looks Bad - Don't Use",
-      "ClashWorldHomeStage": "Good to Use",
-      "CityWorldHomeStage": "Good to Use",
-      "SnowWorldHomeStage": "Good to Use",
-      "SeaWorldHomeStage": "Good to Use",
-      "LavaWorldHomeStage": "Lags Kingdom",
-      "BossRaidWorldHomeStage": "Looks Bad - Don't Use",
-      "SkyWorldHomeStage": "Good to Use",
-      "MoonWorldHomeStage": "Good to Use",
-      "PeachWorldHomeStage": "Good to Use",
-      "Special1WorldHomeStage": "Good to Use",
-      "Special2WorldHomeStage": "Good to Use",
-      "PushBlockExStage": "Good to Use",
-      "PoisonWaveExStage": "Good to Use",
-      "FrogSearchExStage": "Good to Use",
-      "WanwanClashExStage": "Good to Use",
-      "WindBlowExStage": "Good to Use",
-      "CapAppearExStage": "Good to Use",
-      "TrexPoppunExStage": "Good to Use",
-      "SandWorldKillerExStage": "Good to Use",
-      "SandWorldSphinxExStage": "Good to Use",
-      "SandWorldMeganeExStage": "Good to Use",
-      "SandWorldRotateExStage": "Good to Use",
-      "RocketFlowerExStage": "Good to Use",
-      "MeganeLiftExStage": "Good to Use",
-      "SandWorldPressExStage": "Good to Use",
-      "SandWorldVibrationStage": "Good to Use",
-      "WaterTubeExStage": "Good to Use",
-      "TrampolineWallCatchExStage": "Good to Use",
-      "FastenerExStage": "Looks Bad - Don't Use",
-      "GotogotonExStage": "Good to Use",
-      "FrogPoisonExStage": "Looks Bad - Don't Use",
-      "ForestWorldWaterExStage": "Good to Use",
-      "RailCollisionExStage": "Good to Use",
-      "ShootingElevatorExStage": "Good to Use",
-      "FogMountainExStage": "Looks Bad - Don't Use",
-      "ForestWorldBonusStage": "Good to Use",
-      "PackunPoisonExStage": "Good to Use",
-      "KillerRoadExStage": "Good to Use",
-      "ForestWorldCloudBonusExStage": "Good to Use",
-      "AnimalChaseExStage": "Good to Use",
-      "ForestWorldWoodsStage": "Good to Use",
-      "FukuwaraiKuriboStage": "Looks Bad - Don't Use",
-      "ImomuPoisonExStage": "Good to Use",
-      "JangoExStage": "Looks Bad - Don't Use",
-      "ElectricWireExStage": "Good to Use",
-      "CapRotatePackunExStage": "Good to Use",
-      "TrexBikeExStage": "Good to Use",
-      "SwingSteelExStage": "Good to Use",
-      "DonsukeExStage": "Looks Bad - Don't Use",
-      "CityPeopleRoadStage": "Good to Use",
-      "PoleKillerExStage": "Good to Use",
-      "PoleGrabCeilExStage": "Good to Use",
-      "ShootingCityExStage": "Lags Kingdom",
-      "BikeSteelExStage": "Good to Use",
-      "IceWaterDashExStage": "Good to Use",
-      "IceWaterBlockExStage": "Good to Use",
-      "ByugoPuzzleExStage": "Good to Use",
-      "IceWalkerExStage": "Looks Bad - Don't Use",
-      "SnowWorldCloudBonusStage": "Good to Use",
-      "KillerRailCollisionExStage": "Good to Use",
-      "SnowWorldLobbyExStage": "Good to Use",
-      "WaterValleyExStage": "Good to Use",
-      "CloudExStage": "Good to Use",
-      "TogezoRotateExStage": "Good to Use",
-      "SenobiTowerExStage": "Good to Use",
-      "ReflectBombExStage": "Good to Use",
-      "SeaWorldUtsuboCaveStage": "Good to Use",
-      "SeaWorldSneakingManStage": "Good to Use",
-      "SeaWorldVibrationStage": "Good to Use",
-      "ForkExStage": "Lags Kingdom",
-      "CapAppearLavaLiftExStage": "Lags Kingdom",
-      "GabuzouClockExStage": "Lags Kingdom",
-      "LavaWorldBubbleLaneExStage": "Lags Kingdom",
-      "LavaWorldExcavationExStage": "Lags Kingdom",
-      "LavaWorldUpDownExStage": "Lags Kingdom",
-      "LavaWorldClockExStage": "Good to Use",
-      "LavaWorldFenceLiftExStage": "Lags Kingdom",
-      "LavaWorldTreasureStage": "Good to Use",
-      "LavaBonus1Zone": "Good to Use",
-      "BullRunExStage": "Good to Use",
-      "DotTowerExStage": "Good to Use",
-      "JizoSwitchExStage": "Good to Use",
-      "TsukkunRotateExStage": "Good to Use",
-      "TsukkunClimbExStage": "Good to Use",
-      "SkyWorldCloudBonusExStage": "Good to Use",
-      "SkyWorldTreasureStage": "Good to Use",
-      "MoonAthleticExStage": "Good to Use",
-      "MoonWorldSpinxRoom": "Good to Use",
-      "YoshiCloudExStage": "Good to Use",
-      "DotHardExStage": "Good to Use",
-      "FukuwaraiMarioStage": "Looks Bad - Don't Use",
-      "PeachWorldCastleStage": "Lags Kingdom",
-      "PeachWorldPictureBossForestStage": "Good to Use",
-      "PeachWorldPictureBossKnuckleStage": "Good to Use",
-      "PeachWorldPictureBossMagmaStage": "Good to Use",
-      "PeachWorldPictureMofumofuStage": "Good to Use",
-      "PeachWorldPictureBossRaidStage": "Good to Use",
-      "PeachWorldPictureGiantWanderBossStage": "Good to Use",
-      "Special1WorldTowerStackerStage": "Good to Use",
-      "Special1WorldTowerBombTailStage": "Good to Use",
-      "Special1WorldTowerFireBlowerStage": "Good to Use",
-      "Special1WorldTowerCapThrowerStage": "Good to Use",
-      "BikeSteelNoCapExStage": "Good to Use",
-      "PackunPoisonNoCapExStage": "Looks Bad - Don't Use",
-      "KillerRoadNoCapExStage": "Good to Use",
-      "ShootingCityYoshiExStage": "Lags Kingdom",
-      "SenobiTowerYoshiExStage": "Good to Use",
-      "LavaWorldUpDownYoshiExStage": "Lags Kingdom",
-      "Special2WorldLavaStage": "Good to Use",
-      "ForestWorldWoodsTreasureStage": "Looks Bad - Don't Use",
-      "KaronWingTowerStage": "Good to Use",
-      "CityWorldFactoryStage": "Good to Use",
-      "ForestWorldBossStage": "Good to Use",
-      "ForestWorldTowerStage": "Good to Use",
-      "MoonWorldCaptureParadeStage": "Good to Use",
-      "MoonWorldWeddingRoomStage": "Good to Use",
-      "RevengeForestBossStage": "Good to Use",
-      "RevengeBossKnuckleStage": "Good to Use",
-      "RevengeBossMagmaStage": "Lags Kingdom",
-      "RevengeBossRaidStage": "Good to Use",
-      "RevengeGiantWanderBossStage": "Good to Use",
-      "RevengeMofumofuStage": "Lags Kingdom",
-      "SandWorldPyramid000Stage": "Good to Use",
-      "SandWorldPyramid001Stage": "Good to Use",
-      "SandWorldUnderground000Stage": "Good to Use",
-      "SandWorldUnderground001Stage": "Good to Use",
-      "SnowWorldTownStage": "Looks Bad - Don't Use",
-      "SnowWorldLobby000Stage": "Good to Use",
-      "Special2WorldCloudStage": "Good to Use",
-      "Special2WorldKoopaStage": "Good to Use"
-    },
-    "The Frog Pond": {
-      "CapWorldHomeStage": "Good to Use",
-      "WaterFallWorldHomeStage": "Good to Use",
-      "SandWorldHomeStage": "Good to Use",
-      "LakeWorldHomeStage": "Good to Use",
-      "ForestWorldHomeStage": "Good to Use",
-      "CloudWorldHomeStage": "Good to Use",
-      "ClashWorldHomeStage": "Good to Use",
-      "CityWorldHomeStage": "Good to Use",
-      "SnowWorldHomeStage": "Good to Use",
-      "SeaWorldHomeStage": "Good to Use",
-      "LavaWorldHomeStage": "Lags Kingdom",
-      "BossRaidWorldHomeStage": "Good to Use",
-      "SkyWorldHomeStage": "Good to Use",
-      "MoonWorldHomeStage": "Good to Use",
-      "PeachWorldHomeStage": "Good to Use",
-      "Special1WorldHomeStage": "Good to Use",
-      "Special2WorldHomeStage": "Good to Use",
-      "PushBlockExStage": "Good to Use",
-      "PoisonWaveExStage": "Good to Use",
-      "FrogSearchExStage": "Good to Use",
-      "WanwanClashExStage": "Good to Use",
-      "WindBlowExStage": "Good to Use",
-      "CapAppearExStage": "Good to Use",
-      "TrexPoppunExStage": "Good to Use",
-      "SandWorldKillerExStage": "Good to Use",
-      "SandWorldSphinxExStage": "Good to Use",
-      "SandWorldMeganeExStage": "Good to Use",
-      "SandWorldRotateExStage": "Good to Use",
-      "RocketFlowerExStage": "Good to Use",
-      "MeganeLiftExStage": "Good to Use",
-      "SandWorldPressExStage": "Good to Use",
-      "SandWorldVibrationStage": "Good to Use",
-      "WaterTubeExStage": "Good to Use",
-      "TrampolineWallCatchExStage": "Good to Use",
-      "FastenerExStage": "Good to Use",
-      "GotogotonExStage": "Good to Use",
-      "FrogPoisonExStage": "Looks Bad - Don't Use",
-      "ForestWorldWaterExStage": "Good to Use",
-      "RailCollisionExStage": "Good to Use",
-      "ShootingElevatorExStage": "Good to Use",
-      "FogMountainExStage": "Looks Bad - Don't Use",
-      "ForestWorldBonusStage": "Good to Use",
-      "PackunPoisonExStage": "Good to Use",
-      "KillerRoadExStage": "Good to Use",
-      "ForestWorldCloudBonusExStage": "Good to Use",
-      "AnimalChaseExStage": "Good to Use",
-      "ForestWorldWoodsStage": "Good to Use",
-      "FukuwaraiKuriboStage": "Looks Bad - Don't Use",
-      "ImomuPoisonExStage": "Good to Use",
-      "JangoExStage": "Good to Use",
-      "ElectricWireExStage": "Good to Use",
-      "CapRotatePackunExStage": "Good to Use",
-      "TrexBikeExStage": "Good to Use",
-      "SwingSteelExStage": "Good to Use",
-      "DonsukeExStage": "Looks Bad - Don't Use",
-      "CityPeopleRoadStage": "Good to Use",
-      "PoleKillerExStage": "Good to Use",
-      "PoleGrabCeilExStage": "Good to Use",
-      "ShootingCityExStage": "Lags Kingdom",
-      "BikeSteelExStage": "Good to Use",
-      "IceWaterDashExStage": "Good to Use",
-      "IceWaterBlockExStage": "Good to Use",
-      "ByugoPuzzleExStage": "Good to Use",
-      "IceWalkerExStage": "Good to Use",
-      "SnowWorldCloudBonusStage": "Good to Use",
-      "KillerRailCollisionExStage": "Good to Use",
-      "SnowWorldLobbyExStage": "Good to Use",
-      "WaterValleyExStage": "Good to Use",
-      "CloudExStage": "Good to Use",
-      "TogezoRotateExStage": "Good to Use",
-      "SenobiTowerExStage": "Good to Use",
-      "ReflectBombExStage": "Good to Use",
-      "SeaWorldUtsuboCaveStage": "Good to Use",
-      "SeaWorldSneakingManStage": "Good to Use",
-      "SeaWorldVibrationStage": "Good to Use",
-      "ForkExStage": "Lags Kingdom",
-      "CapAppearLavaLiftExStage": "Lags Kingdom",
-      "GabuzouClockExStage": "Lags Kingdom",
-      "LavaWorldBubbleLaneExStage": "Lags Kingdom",
-      "LavaWorldExcavationExStage": "Lags Kingdom",
-      "LavaWorldUpDownExStage": "Lags Kingdom",
-      "LavaWorldClockExStage": "Good to Use",
-      "LavaWorldFenceLiftExStage": "Lags Kingdom",
-      "LavaWorldTreasureStage": "Good to Use",
-      "LavaBonus1Zone": "Good to Use",
-      "BullRunExStage": "Good to Use",
-      "DotTowerExStage": "Good to Use",
-      "JizoSwitchExStage": "Good to Use",
-      "TsukkunRotateExStage": "Good to Use",
-      "TsukkunClimbExStage": "Good to Use",
-      "SkyWorldCloudBonusExStage": "Good to Use",
-      "SkyWorldTreasureStage": "Good to Use",
-      "MoonAthleticExStage": "Good to Use",
-      "MoonWorldSpinxRoom": "Good to Use",
-      "YoshiCloudExStage": "Looks Bad - Don't Use",
-      "DotHardExStage": "Good to Use",
-      "FukuwaraiMarioStage": "Looks Bad - Don't Use",
-      "PeachWorldCastleStage": "Lags Kingdom",
-      "PeachWorldPictureBossForestStage": "Good to Use",
-      "PeachWorldPictureBossKnuckleStage": "Good to Use",
-      "PeachWorldPictureBossMagmaStage": "Good to Use",
-      "PeachWorldPictureMofumofuStage": "Good to Use",
-      "PeachWorldPictureBossRaidStage": "Good to Use",
-      "PeachWorldPictureGiantWanderBossStage": "Good to Use",
-      "Special1WorldTowerStackerStage": "Good to Use",
-      "Special1WorldTowerBombTailStage": "Good to Use",
-      "Special1WorldTowerFireBlowerStage": "Good to Use",
-      "Special1WorldTowerCapThrowerStage": "Good to Use",
-      "BikeSteelNoCapExStage": "Good to Use",
-      "PackunPoisonNoCapExStage": "Good to Use",
-      "KillerRoadNoCapExStage": "Good to Use",
-      "ShootingCityYoshiExStage": "Lags Kingdom",
-      "SenobiTowerYoshiExStage": "Good to Use",
-      "LavaWorldUpDownYoshiExStage": "Lags Kingdom",
-      "Special2WorldLavaStage": "Good to Use",
-      "ForestWorldWoodsTreasureStage": "Looks Bad - Don't Use",
-      "KaronWingTowerStage": "Good to Use",
-      "CityWorldFactoryStage": "Good to Use",
-      "ForestWorldBossStage": "Good to Use",
-      "ForestWorldTowerStage": "Good to Use",
-      "MoonWorldCaptureParadeStage": "Good to Use",
-      "MoonWorldWeddingRoomStage": "Good to Use",
-      "RevengeForestBossStage": "Looks Bad - Don't Use",
-      "RevengeBossKnuckleStage": "Looks Bad - Don't Use",
-      "RevengeBossMagmaStage": "Lags Kingdom",
-      "RevengeBossRaidStage": "Looks Bad - Don't Use",
-      "RevengeGiantWanderBossStage": "Good to Use",
-      "RevengeMofumofuStage": "Lags Kingdom",
-      "SandWorldPyramid000Stage": "Good to Use",
-      "SandWorldPyramid001Stage": "Good to Use",
-      "SandWorldUnderground000Stage": "Looks Bad - Don't Use",
-      "SandWorldUnderground001Stage": "Looks Bad - Don't Use",
-      "SnowWorldTownStage": "Looks Bad - Don't Use",
-      "SnowWorldLobby000Stage": "Good to Use",
-      "Special2WorldCloudStage": "Good to Use",
-      "Special2WorldKoopaStage": "Good to Use"
-    },
-    "Rolling On and On": {
-      "CapWorldHomeStage": "Good to Use",
-      "WaterFallWorldHomeStage": "Good to Use",
-      "SandWorldHomeStage": "Good to Use",
-      "LakeWorldHomeStage": "Looks Bad - Don't Use",
-      "ForestWorldHomeStage": "Good to Use",
-      "CloudWorldHomeStage": "Looks Bad - Don't Use",
-      "ClashWorldHomeStage": "Good to Use",
-      "CityWorldHomeStage": "Good to Use",
-      "SnowWorldHomeStage": "Good to Use",
-      "SeaWorldHomeStage": "Good to Use",
-      "LavaWorldHomeStage": "Lags Kingdom",
-      "BossRaidWorldHomeStage": "Looks Bad - Don't Use",
-      "SkyWorldHomeStage": "Looks Bad - Don't Use",
-      "MoonWorldHomeStage": "Good to Use",
-      "PeachWorldHomeStage": "Good to Use",
-      "Special1WorldHomeStage": "Good to Use",
-      "Special2WorldHomeStage": "Good to Use",
-      "PushBlockExStage": "Good to Use",
-      "PoisonWaveExStage": "Good to Use",
-      "FrogSearchExStage": "Good to Use",
-      "WanwanClashExStage": "Looks Bad - Don't Use",
-      "WindBlowExStage": "Good to Use",
-      "CapAppearExStage": "Good to Use",
-      "TrexPoppunExStage": "Good to Use",
-      "SandWorldKillerExStage": "Good to Use",
-      "SandWorldSphinxExStage": "Good to Use",
-      "SandWorldMeganeExStage": "Good to Use",
-      "SandWorldRotateExStage": "Looks Bad - Don't Use",
-      "RocketFlowerExStage": "Good to Use",
-      "MeganeLiftExStage": "Good to Use",
-      "SandWorldPressExStage": "Good to Use",
-      "SandWorldVibrationStage": "Good to Use",
-      "WaterTubeExStage": "Good to Use",
-      "TrampolineWallCatchExStage": "Good to Use",
-      "FastenerExStage": "Good to Use",
-      "GotogotonExStage": "Looks Bad - Don't Use",
-      "FrogPoisonExStage": "Looks Bad - Don't Use",
-      "ForestWorldWaterExStage": "Looks Bad - Don't Use",
-      "RailCollisionExStage": "Good to Use",
-      "ShootingElevatorExStage": "Good to Use",
-      "FogMountainExStage": "Looks Bad - Don't Use",
-      "ForestWorldBonusStage": "Good to Use",
-      "PackunPoisonExStage": "Good to Use",
-      "KillerRoadExStage": "Good to Use",
-      "ForestWorldCloudBonusExStage": "Good to Use",
-      "AnimalChaseExStage": "Good to Use",
-      "ForestWorldWoodsStage": "Good to Use",
-      "FukuwaraiKuriboStage": "Looks Bad - Don't Use",
-      "ImomuPoisonExStage": "Looks Bad - Don't Use",
-      "JangoExStage": "Looks Bad - Don't Use",
-      "ElectricWireExStage": "Looks Bad - Don't Use",
-      "CapRotatePackunExStage": "Good But Dark",
-      "TrexBikeExStage": "Good But Dark",
-      "SwingSteelExStage": "Good to Use",
-      "DonsukeExStage": "Looks Bad - Don't Use",
-      "CityPeopleRoadStage": "Good to Use",
-      "PoleKillerExStage": "Good to Use",
-      "PoleGrabCeilExStage": "Good to Use",
-      "ShootingCityExStage": "Lags Kingdom",
-      "BikeSteelExStage": "Good to Use",
-      "IceWaterDashExStage": "Good to Use",
-      "IceWaterBlockExStage": "Looks Bad - Don't Use",
-      "ByugoPuzzleExStage": "Looks Bad - Don't Use",
-      "IceWalkerExStage": "Good But Bright",
-      "SnowWorldCloudBonusStage": "Good to Use",
-      "KillerRailCollisionExStage": "Good to Use",
-      "SnowWorldLobbyExStage": "Good to Use",
-      "WaterValleyExStage": "Looks Bad - Don't Use",
-      "CloudExStage": "Good to Use",
-      "TogezoRotateExStage": "Good to Use",
-      "SenobiTowerExStage": "Good to Use",
-      "ReflectBombExStage": "Looks Bad - Don't Use",
-      "SeaWorldUtsuboCaveStage": "Good to Use",
-      "SeaWorldSneakingManStage": "Looks Bad - Don't Use",
-      "SeaWorldVibrationStage": "Good to Use",
-      "ForkExStage": "Lags Kingdom",
-      "CapAppearLavaLiftExStage": "Lags Kingdom",
-      "GabuzouClockExStage": "Lags Kingdom",
-      "LavaWorldBubbleLaneExStage": "Lags Kingdom",
-      "LavaWorldExcavationExStage": "Lags Kingdom",
-      "LavaWorldUpDownExStage": "Lags Kingdom",
-      "LavaWorldClockExStage": "Good to Use",
-      "LavaWorldFenceLiftExStage": "Lags Kingdom",
-      "LavaWorldTreasureStage": "Good to Use",
-      "LavaBonus1Zone": "Good to Use",
-      "BullRunExStage": "Good to Use",
-      "DotTowerExStage": "Good to Use",
-      "JizoSwitchExStage": "Good to Use",
-      "TsukkunRotateExStage": "Good to Use",
-      "TsukkunClimbExStage": "Good to Use",
-      "SkyWorldCloudBonusExStage": "Good to Use",
-      "SkyWorldTreasureStage": "Good to Use",
-      "MoonAthleticExStage": "Looks Bad - Don't Use",
-      "MoonWorldSpinxRoom": "Good to Use",
-      "YoshiCloudExStage": "Good to Use",
-      "DotHardExStage": "Good to Use",
-      "FukuwaraiMarioStage": "Looks Bad - Don't Use",
-      "PeachWorldCastleStage": "Lags Kingdom",
-      "PeachWorldPictureBossForestStage": "Good to Use",
-      "PeachWorldPictureBossKnuckleStage": "Good to Use",
-      "PeachWorldPictureBossMagmaStage": "Good to Use",
-      "PeachWorldPictureMofumofuStage": "Good to Use",
-      "PeachWorldPictureBossRaidStage": "Good to Use",
-      "PeachWorldPictureGiantWanderBossStage": "Good to Use",
-      "Special1WorldTowerStackerStage": "Good to Use",
-      "Special1WorldTowerBombTailStage": "Good to Use",
-      "Special1WorldTowerFireBlowerStage": "Good to Use",
-      "Special1WorldTowerCapThrowerStage": "Good to Use",
-      "BikeSteelNoCapExStage": "Looks Bad - Don't Use",
-      "PackunPoisonNoCapExStage": "Looks Bad - Don't Use",
-      "KillerRoadNoCapExStage": "Good to Use",
-      "ShootingCityYoshiExStage": "Lags Kingdom",
-      "SenobiTowerYoshiExStage": "Looks Bad - Don't Use",
-      "LavaWorldUpDownYoshiExStage": "Lags Kingdom",
-      "Special2WorldLavaStage": "Looks Bad - Don't Use",
-      "ForestWorldWoodsTreasureStage": "Good to Use",
-      "KaronWingTowerStage": "Good to Use",
-      "CityWorldFactoryStage": "Looks Bad - Don't Use",
-      "ForestWorldBossStage": "Good to Use",
-      "ForestWorldTowerStage": "Good to Use",
-      "MoonWorldCaptureParadeStage": "Looks Bad - Don't Use",
-      "MoonWorldWeddingRoomStage": "Looks Bad - Don't Use",
-      "RevengeForestBossStage": "Good to Use",
-      "RevengeBossKnuckleStage": "Looks Bad - Don't Use",
-      "RevengeBossMagmaStage": "Lags Kingdom",
-      "RevengeBossRaidStage": "Looks Bad - Don't Use",
-      "RevengeGiantWanderBossStage": "Good to Use",
-      "RevengeMofumofuStage": "Lags Kingdom",
-      "SandWorldPyramid000Stage": "Looks Bad - Don't Use",
-      "SandWorldPyramid001Stage": "Looks Bad - Don't Use",
-      "SandWorldUnderground000Stage": "Looks Bad - Don't Use",
-      "SandWorldUnderground001Stage": "Looks Bad - Don't Use",
-      "SnowWorldTownStage": "Good to Use",
-      "SnowWorldLobby000Stage": "Good to Use",
-      "Special2WorldCloudStage": "Good but dark at end",
-      "Special2WorldKoopaStage": "Looks Bad - Don't Use"
-    }
-  }
-};
-
-  // A NEW collection name (not the old 5-skybox "capKingdom_test" one
-  // from before) since this is now real, full-scale data. The old test
-  // collection is still sitting in Firestore, harmless, safe to ignore
-  // or delete later from the Firebase console.
-  const COLLECTION_NAME = "capKingdom";
-
-  const SUBAREAS = REAL_DATA.subareas;
-  const SKYBOXES = REAL_DATA.skyboxes;
-
+  // ===================== STATUS OPTIONS =====================
+  // Same set/meanings as the Apps Script version's dropdown pills.
   const STATUS_OPTIONS = [
     "",
     "Good to Use",
@@ -1156,28 +321,113 @@
     return "status-neutral";
   }
 
-  // ===================== SEEDING (one-time setup) =====================
-  document.getElementById('seedBtn').addEventListener('click', async () => {
-    setStatusLine("Seeding real data - this writes 6 documents, one per subarea...", "");
-    for (const subarea of SUBAREAS) {
-      await setDoc(doc(db, COLLECTION_NAME, subarea), { statuses: REAL_DATA.data[subarea] });
-    }
-    setStatusLine("Real CapKingdom data seeded.", "connected");
-  });
-
-  // ===================== RENDERING THE TABLE =====================
-  function buildTableHead() {
-    const thead = document.getElementById('capTableHead');
-    let html = '<tr><th>Subarea</th>';
-    SKYBOXES.forEach(sb => { html += `<th>${sb}</th>`; });
-    html += '</tr>';
-    thead.innerHTML = html;
+  function statusTextClass(value) {
+    if (value === "Looks Bad - Don't Use" || value === "Lags Kingdom" || value === "Lag(emu)") return "status-text-bad";
+    if (value && value !== "" && value !== "Good to Use") return "status-text-warn";
+    return "status-text-neutral";
   }
 
-  function buildTableRows() {
-    const tbody = document.getElementById('capTableBody');
+  // ===================== GLOBAL STATE =====================
+  let KINGDOMS = [];   // [{ slug, label, subareas: [...] }, ...] - loaded from kingdoms-config.json
+  let SKYBOXES = [];   // shared 136-name list, same order for every Kingdom
+  let activeSlug = null;
+  let activeLabel = '';
+  let activeSubareas = [];
+  let currentData = {};        // { subareaName: { skyboxName: status } } for the CURRENTLY ACTIVE kingdom only
+  let unsubscribeSnapshot = null; // stops the previous Kingdom's live listener when switching tabs
+
+  // Filters (shared across all Kingdoms, not reset when switching tabs)
+  let hiddenStatuses = new Set(["Good to Use"]); // "Good to Use" hidden by default - the summary table is meant to highlight problems, not everything
+  let subareaFilter = "";
+  let searchQuery = "";
+
+  // ===================== LOAD CONFIG, THEN BUILD TABS =====================
+  async function init() {
+    const res = await fetch('kingdoms-config.json');
+    const config = await res.json();
+    KINGDOMS = config.kingdoms;
+    SKYBOXES = config.skyboxes;
+
+    buildFilterPanel();
+    buildTabs();
+    switchKingdom(KINGDOMS[0].slug); // open on the first Kingdom by default
+  }
+
+  function buildTabs() {
+    const tabBar = document.getElementById('tabBar');
+    tabBar.innerHTML = '';
+    KINGDOMS.forEach(k => {
+      const btn = document.createElement('button');
+      btn.className = 'tab-btn';
+      btn.textContent = k.label;
+      btn.dataset.slug = k.slug;
+      btn.addEventListener('click', () => switchKingdom(k.slug));
+      tabBar.appendChild(btn);
+    });
+  }
+
+  function setActiveTabStyling() {
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.slug === activeSlug);
+    });
+  }
+
+  // ===================== SWITCHING KINGDOMS =====================
+  function switchKingdom(slug) {
+    const kingdom = KINGDOMS.find(k => k.slug === slug);
+    if (!kingdom) return;
+
+    activeSlug = slug;
+    activeLabel = kingdom.label;
+    activeSubareas = kingdom.subareas;
+    currentData = {};
+
+    document.getElementById('activeKingdomName').textContent = activeLabel;
+    setActiveTabStyling();
+    buildSubareaFilterOptions();
+    buildMainTableSkeleton();
+
+    // Stop listening to the PREVIOUS Kingdom's collection before starting
+    // a new one - otherwise every past tab you've visited keeps updating
+    // in the background forever, which is wasted reads and a memory leak.
+    if (unsubscribeSnapshot) unsubscribeSnapshot();
+
+    unsubscribeSnapshot = onSnapshot(
+      collection(db, slug),
+      (snapshot) => {
+        if (snapshot.empty) {
+          setStatusLine(`No data yet for ${activeLabel} - click "Seed All Kingdoms" above.`, "");
+        } else {
+          snapshot.forEach(docSnap => {
+            currentData[docSnap.id] = docSnap.data().statuses || {};
+          });
+          setStatusLine("Connected - live syncing.", "connected");
+        }
+        renderMainTable();
+        renderProgressCounter();
+        renderSummaryTable();
+      },
+      (err) => setStatusLine("Connection error: " + err.message, "error")
+    );
+  }
+
+  function setStatusLine(text, cls) {
+    const el = document.getElementById('statusLine');
+    el.textContent = text;
+    el.className = cls || '';
+  }
+
+  // ===================== MAIN STATUS TABLE =====================
+  function buildMainTableSkeleton() {
+    const thead = document.getElementById('mainTableHead');
+    let headHtml = '<tr><th>Subarea</th>';
+    SKYBOXES.forEach(sb => { headHtml += `<th>${sb}</th>`; });
+    headHtml += '</tr>';
+    thead.innerHTML = headHtml;
+
+    const tbody = document.getElementById('mainTableBody');
     tbody.innerHTML = '';
-    SUBAREAS.forEach(subarea => {
+    activeSubareas.forEach(subarea => {
       const row = document.createElement('tr');
       row.id = 'row-' + subarea;
       const nameTd = document.createElement('td');
@@ -1188,78 +438,173 @@
     });
   }
 
-  function renderRow(subarea, statuses) {
-    const row = document.getElementById('row-' + subarea);
-    if (!row) return;
+  function renderMainTable() {
+    activeSubareas.forEach(subarea => {
+      const row = document.getElementById('row-' + subarea);
+      if (!row) return;
+      const statuses = currentData[subarea] || {};
 
-    SKYBOXES.forEach(sb => {
-      let cellId = 'cell-' + subarea + '-' + sb;
-      let td = document.getElementById(cellId);
-      if (!td) {
-        td = document.createElement('td');
-        td.id = cellId;
-        row.appendChild(td);
-      }
-
-      const currentValue = (statuses && statuses[sb]) || "";
-
-      const select = document.createElement('select');
-      select.className = statusClass(currentValue);
-      STATUS_OPTIONS.forEach(opt => {
-        const option = document.createElement('option');
-        option.value = opt;
-        option.textContent = opt === "" ? "-- Select --" : opt;
-        if (opt === currentValue) option.selected = true;
-        select.appendChild(option);
-      });
-
-      select.addEventListener('change', async () => {
-        const newValue = select.value;
-        select.className = statusClass(newValue);
-
-        try {
-          await setDoc(
-            doc(db, COLLECTION_NAME, subarea),
-            { statuses: { [sb]: newValue } },
-            { merge: true }
-          );
-          setStatusLine('Saved "' + sb + '" for ' + subarea + '.', "connected");
-        } catch (err) {
-          setStatusLine("Error saving: " + err.message, "error");
+      SKYBOXES.forEach(sb => {
+        let cellId = 'cell-' + subarea + '-' + sb;
+        let td = document.getElementById(cellId);
+        if (!td) {
+          td = document.createElement('td');
+          td.id = cellId;
+          row.appendChild(td);
         }
-      });
 
-      td.innerHTML = '';
-      td.appendChild(select);
+        const currentValue = statuses[sb] || "";
+        const select = document.createElement('select');
+        select.className = statusClass(currentValue);
+        STATUS_OPTIONS.forEach(opt => {
+          const option = document.createElement('option');
+          option.value = opt;
+          option.textContent = opt === "" ? "-- Select --" : opt;
+          if (opt === currentValue) option.selected = true;
+          select.appendChild(option);
+        });
+
+        select.addEventListener('change', async () => {
+          const newValue = select.value;
+          select.className = statusClass(newValue);
+          try {
+            await setDoc(doc(db, activeSlug, subarea), { statuses: { [sb]: newValue } }, { merge: true });
+            setStatusLine(`Saved "${sb}" for ${subarea}.`, "connected");
+          } catch (err) {
+            setStatusLine("Error saving: " + err.message, "error");
+          }
+        });
+
+        td.innerHTML = '';
+        td.appendChild(select);
+      });
     });
   }
 
-  function setStatusLine(text, cls) {
-    const el = document.getElementById('statusLine');
-    el.textContent = text;
-    el.className = cls || '';
+  // ===================== PROGRESS COUNTER =====================
+  // Same formula as the Apps Script version: total = every status cell
+  // across every subarea (subareas x 136 skyboxes), filled = how many
+  // aren't blank.
+  function renderProgressCounter() {
+    const badge = document.getElementById('progressBadge');
+    const totalCells = activeSubareas.length * SKYBOXES.length;
+    let filled = 0;
+
+    activeSubareas.forEach(subarea => {
+      const statuses = currentData[subarea] || {};
+      SKYBOXES.forEach(sb => {
+        if ((statuses[sb] || "").trim() !== "") filled++;
+      });
+    });
+
+    const pct = totalCells > 0 ? (filled / totalCells) * 100 : 0;
+    badge.textContent = `${filled} / ${totalCells} marked (${pct.toFixed(2)}%)`;
+    badge.classList.toggle('complete', totalCells > 0 && filled === totalCells);
   }
 
-  // ===================== LIVE SYNC =====================
-  buildTableHead();
-  buildTableRows();
+  // ===================== SUMMARY / ISSUES TABLE =====================
+  function buildSubareaFilterOptions() {
+    const select = document.getElementById('subareaFilterSelect');
+    select.innerHTML = '<option value="">All Subareas</option>';
+    activeSubareas.forEach(subarea => {
+      const opt = document.createElement('option');
+      opt.value = subarea;
+      opt.textContent = subarea;
+      select.appendChild(opt);
+    });
+    select.value = subareaFilter; // keep whatever was selected, if it still applies
+  }
 
-  onSnapshot(
-    collection(db, COLLECTION_NAME),
-    (snapshot) => {
-      if (snapshot.empty) {
-        setStatusLine('No data yet - click "Seed Real CapKingdom Data" above.', "");
-        return;
-      }
-      snapshot.forEach(docSnap => {
-        renderRow(docSnap.id, docSnap.data().statuses);
+  function buildFilterPanel() {
+    const panel = document.getElementById('filterPanel');
+    panel.innerHTML = '';
+    STATUS_OPTIONS.filter(s => s !== "").forEach(status => {
+      const label = document.createElement('label');
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.checked = !hiddenStatuses.has(status);
+      checkbox.addEventListener('change', () => {
+        if (checkbox.checked) hiddenStatuses.delete(status);
+        else hiddenStatuses.add(status);
+        renderSummaryTable();
       });
-      setStatusLine("Connected - live syncing.", "connected");
-    },
-    (err) => {
-      setStatusLine("Connection error: " + err.message, "error");
+      label.appendChild(checkbox);
+      label.appendChild(document.createTextNode('Show "' + status + '"'));
+      panel.appendChild(label);
+    });
+  }
+
+  document.getElementById('toggleFiltersBtn').addEventListener('click', () => {
+    document.getElementById('filterPanel').classList.toggle('open');
+  });
+
+  document.getElementById('subareaFilterSelect').addEventListener('change', (e) => {
+    subareaFilter = e.target.value;
+    renderSummaryTable();
+  });
+
+  document.getElementById('searchInput').addEventListener('input', (e) => {
+    searchQuery = e.target.value.trim().toLowerCase();
+    renderSummaryTable();
+  });
+
+  // Lists every (subarea, skybox) pair that: has a status set, isn't
+  // hidden by the filter checkboxes, matches the subarea dropdown (if
+  // one's selected), and matches the search box (if anything's typed).
+  function renderSummaryTable() {
+    const tbody = document.getElementById('summaryTableBody');
+    const emptyMsg = document.getElementById('emptySummary');
+    tbody.innerHTML = '';
+
+    let rowCount = 0;
+
+    activeSubareas.forEach(subarea => {
+      if (subareaFilter && subarea !== subareaFilter) return;
+      const statuses = currentData[subarea] || {};
+
+      SKYBOXES.forEach(sb => {
+        const value = statuses[sb] || "";
+        if (value === "") return;           // unset cells never show in the issues list
+        if (hiddenStatuses.has(value)) return;
+
+        if (searchQuery) {
+          const haystack = (subarea + ' ' + sb).toLowerCase();
+          if (!haystack.includes(searchQuery)) return;
+        }
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${subarea}</td>
+          <td>${sb}</td>
+          <td class="${statusTextClass(value)}">${value}</td>
+        `;
+        tbody.appendChild(tr);
+        rowCount++;
+      });
+    });
+
+    emptyMsg.style.display = rowCount === 0 ? 'block' : 'none';
+  }
+
+  // ===================== SEED ALL KINGDOMS =====================
+  document.getElementById('seedBtn').addEventListener('click', async () => {
+    setStatusLine("Fetching real spreadsheet data...", "");
+    const res = await fetch('seed-data.json');
+    const seedData = await res.json(); // { slug: { subarea: { skybox: status } } }
+
+    let written = 0;
+    for (const kingdom of KINGDOMS) {
+      const kingdomData = seedData[kingdom.slug];
+      for (const subarea of kingdom.subareas) {
+        await setDoc(doc(db, kingdom.slug, subarea), { statuses: kingdomData[subarea] });
+        written++;
+        setStatusLine(`Seeding... ${written} subareas written so far.`, "");
+      }
     }
-  );
+    setStatusLine(`Done - seeded ${written} subareas across ${KINGDOMS.length} Kingdoms.`, "connected");
+  });
+
+  init();
 </script>
 
 </body>
