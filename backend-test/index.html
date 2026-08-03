@@ -186,17 +186,28 @@
     thead.innerHTML = html;
   }
 
-  function renderRow(subarea, statuses) {
-    let row = document.getElementById('row-' + subarea);
-    if (!row) {
-      row = document.createElement('tr');
+  // Creates one empty row per subarea, in the exact order defined in the
+  // SUBAREAS array above - Firestore doesn't guarantee any particular
+  // order when you read a whole collection back, so without this the
+  // rows would land in whatever order Firestore's internal index happens
+  // to return them (often looks alphabetical, but isn't reliable).
+  function buildTableRows() {
+    const tbody = document.getElementById('capTableBody');
+    tbody.innerHTML = '';
+    SUBAREAS.forEach(subarea => {
+      const row = document.createElement('tr');
       row.id = 'row-' + subarea;
       const nameTd = document.createElement('td');
       nameTd.textContent = subarea;
       nameTd.style.fontWeight = '600';
       row.appendChild(nameTd);
-      document.getElementById('capTableBody').appendChild(row);
-    }
+      tbody.appendChild(row);
+    });
+  }
+
+  function renderRow(subarea, statuses) {
+    const row = document.getElementById('row-' + subarea);
+    if (!row) return; // an unexpected subarea in Firestore that isn't in our SUBAREAS list - ignore it here
 
     SKYBOXES.forEach(sb => {
       let cellId = 'cell-' + subarea + '-' + sb;
@@ -259,6 +270,7 @@
   // someone else, in a different browser tab, in real time. No refresh
   // button, no polling, no "did I get the latest version" uncertainty.
   buildTableHead();
+  buildTableRows();
 
   onSnapshot(
     collection(db, COLLECTION_NAME),
