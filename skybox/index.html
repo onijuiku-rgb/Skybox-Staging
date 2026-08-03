@@ -155,7 +155,7 @@
     border: 1px solid #3f4147;
     border-radius: 8px;
     padding: 14px;
-    width: 235px; /* card width - also referenced as `cardWidth` in the JS grid math below, keep them matching */
+    width: 240px; /* card width - also referenced as `cardWidth` in the JS grid math below, keep them matching */
     box-shadow: 0 4px 16px rgba(0,0,0,0.5);
   }
 
@@ -323,9 +323,9 @@
     const cols = 6;          // how many cards per row before wrapping to a new row
     const startX = 60;       // pixels from the left edge to the first column
     const startY = 60;       // pixels from the top edge to the first row
-    const gapX = 270;        // horizontal distance between the START of one card and the next (must be >= cardWidth or cards overlap)
+    const gapX = 290;        // horizontal distance between the START of one card and the next (must be >= cardWidth or cards overlap)
     const gapY = 230;        // vertical distance between the START of one row and the next
-    const cardWidth = 235;   // must match .rendered-group-box's `width` in the CSS above
+    const cardWidth = 240;   // must match .rendered-group-box's `width` in the CSS above
     const cardEstHeight = 205; // rough estimate of a card's rendered height (image + title) - only used to size the scrollable area, doesn't need to be exact
 
     const rows = Math.ceil(staticMapGroups.length / cols); // how many rows we need for however many skyboxes exist
