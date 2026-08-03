@@ -69,7 +69,7 @@
     width: 100%;
     padding: 12px 20px;
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-start;
     align-items: center;
     box-sizing: border-box;
     pointer-events: none;
@@ -86,37 +86,29 @@
     pointer-events: auto;
   }
 
-  .map-zoom-control {
-    background-color: #1e1f22;
-    border: 1px solid #35363c;
-    padding: 6px 12px;
-    border-radius: 4px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 12px;
-    color: #95969d;
-    pointer-events: auto;
+  /* Dark, theme-matched scrollbars instead of the default light/white ones */
+  .map-canvas-viewport::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
   }
 
-  .map-zoom-control input[type="range"] {
-    appearance: none;
-    -webkit-appearance: none;
-    background: #2b2d31;
-    height: 6px;
-    border-radius: 3px;
-    outline: none;
-    width: 100px;
+  .map-canvas-viewport::-webkit-scrollbar-track {
+    background: #1a1a1a;
   }
 
-  .map-zoom-control input[type="range"]::-webkit-slider-thumb {
-    appearance: none;
-    -webkit-appearance: none;
-    width: 14px;
-    height: 14px;
-    border-radius: 50%;
-    background: #5865F2;
-    cursor: pointer;
+  .map-canvas-viewport::-webkit-scrollbar-thumb {
+    background-color: #3d3d3d;
+    border-radius: 6px;
+    border: 3px solid #1a1a1a;
+  }
+
+  .map-canvas-viewport::-webkit-scrollbar-thumb:hover {
+    background-color: #4d4d4d;
+  }
+
+  .map-canvas-viewport {
+    scrollbar-color: #3d3d3d #1a1a1a;
+    scrollbar-width: thin;
   }
 
   .map-instructions {
@@ -240,17 +232,13 @@
 <div class="page-body">
   <div class="connection-map-container">
     <div class="map-canvas-viewport" id="mapCanvasViewport">
-      <div class="map-canvas-inner" id="mapCanvasInner" style="transform: scale(1); width: 12000px; height: 10000px;">
+      <div class="map-canvas-inner" id="mapCanvasInner">
         <!-- Grid layout of group boxes renders here -->
       </div>
     </div>
     <div class="map-instructions" id="mapInstructions">Loading...</div>
     <div class="map-footer-bar">
       <div class="map-footer-badge">Made by FireRisingRaging, Onijuiku, and BaconFearMC</div>
-      <div class="map-zoom-control">
-        <input type="range" min="10" max="100" value="100" id="zoomRange">
-        <span id="zoomLabel">100%</span>
-      </div>
     </div>
   </div>
 </div>
@@ -266,7 +254,6 @@
 
 <script>
   let staticMapGroups = [];
-  let currentZoom = 1;
 
   async function loadSkyboxData() {
     const res = await fetch('skybox.json');
@@ -278,14 +265,10 @@
     }));
     renderCanvasMap();
   }
-
   function renderCanvasMap() {
     const innerCanvas = document.getElementById('mapCanvasInner');
     const instructions = document.getElementById('mapInstructions');
     if (!innerCanvas) return;
-
-    innerCanvas.style.width = (12000 / currentZoom) + 'px';
-    innerCanvas.style.height = (10000 / currentZoom) + 'px';
 
     innerCanvas.innerHTML = '';
 
@@ -301,6 +284,15 @@
     const startY = 60;
     const gapX = 280;
     const gapY = 220;
+    const cardWidth = 220;
+    const cardEstHeight = 190; // approx card height incl. image + title, for sizing only
+
+    const rows = Math.ceil(staticMapGroups.length / cols);
+
+    // Size the canvas to fit exactly what's there, plus a little breathing
+    // room - no giant empty scroll area past the last row/column.
+    innerCanvas.style.width = (startX + (cols * gapX) + cardWidth - gapX + 40) + 'px';
+    innerCanvas.style.height = (startY + (rows * gapY) + cardEstHeight - gapY + 80) + 'px';
 
     staticMapGroups.forEach((group, index) => {
       const col = index % cols;
@@ -324,22 +316,6 @@
       innerCanvas.appendChild(groupBox);
     });
   }
-
-  document.addEventListener('input', (e) => {
-    if (e.target && e.target.id === 'zoomRange') {
-      const val = parseInt(e.target.value, 10);
-      currentZoom = val / 100.0;
-      const zoomLabel = document.getElementById('zoomLabel');
-      if (zoomLabel) zoomLabel.textContent = val + '%';
-
-      const innerCanvas = document.getElementById('mapCanvasInner');
-      if (innerCanvas) {
-        innerCanvas.style.transform = `scale(${currentZoom})`;
-        innerCanvas.style.width = (12000 / currentZoom) + 'px';
-        innerCanvas.style.height = (10000 / currentZoom) + 'px';
-      }
-    }
-  });
 
   // --- IMAGE ZOOM LIGHTBOX ---
   const imageLightbox = document.getElementById('imageLightbox');
