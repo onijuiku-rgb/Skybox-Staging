@@ -3,349 +3,109 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Super Mario Odyssey - Skybox Gallery</title>
+<title>Super Mario Odyssey Skybox Project</title>
 <style>
   * { box-sizing: border-box; }
 
   body {
     margin: 0;
+    min-height: 100vh;
     background-color: #121212;
     color: #e6e6e6;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  }
-
-  header {
-    padding: 24px 24px 16px;
-    border-bottom: 1px solid #2a2a2a;
-  }
-
-  header h1 {
-    margin: 0 0 4px;
-    font-size: 1.4rem;
-  }
-
-  header p {
-    margin: 0;
-    color: #999;
-    font-size: 13px;
-  }
-
-  .page-body {
-    padding: 20px 24px 40px;
-  }
-
-  /* --- Connection map (ported from the Apps Script Skybox tab) --- */
-  .connection-map-container {
-    position: relative;
-    background-color: #121212;
-    height: 80vh;
-    min-height: 500px;
-    overflow: hidden;
-    border-radius: 8px;
-    border: 1px solid #333;
-  }
-
-  .map-canvas-viewport {
-    width: 100%;
-    height: 100%;
-    position: relative;
-    overflow: auto;
-  }
-
-  .map-canvas-inner {
-    position: absolute;
-    top: 0;
-    left: 0;
-    transform-origin: 0 0;
-    background-color: #121212;
-    background-image: radial-gradient(#2c2c2c 1px, transparent 1px);
-    background-size: 24px 24px;
-  }
-
-  .map-footer-bar {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    padding: 12px 20px;
-    display: flex;
-    justify-content: flex-start;
-    align-items: center;
-    box-sizing: border-box;
-    pointer-events: none;
-    z-index: 10;
-  }
-
-  .map-footer-badge {
-    background-color: #1e1f22;
-    border: 1px solid #35363c;
-    color: #95969d;
-    padding: 6px 12px;
-    border-radius: 4px;
-    font-size: 12px;
-    pointer-events: auto;
-  }
-
-  /* Dark, theme-matched scrollbars instead of the default light/white ones */
-  .map-canvas-viewport::-webkit-scrollbar {
-    width: 12px;
-    height: 12px;
-  }
-
-  .map-canvas-viewport::-webkit-scrollbar-track {
-    background: #1a1a1a;
-  }
-
-  .map-canvas-viewport::-webkit-scrollbar-thumb {
-    background-color: #3d3d3d;
-    border-radius: 6px;
-    border: 3px solid #1a1a1a;
-  }
-
-  .map-canvas-viewport::-webkit-scrollbar-thumb:hover {
-    background-color: #4d4d4d;
-  }
-
-  .map-canvas-viewport {
-    scrollbar-color: #3d3d3d #1a1a1a;
-    scrollbar-width: thin;
-  }
-
-  .map-instructions {
-    position: absolute;
-    bottom: 50px;
-    left: 20px;
-    color: #888;
-    font-size: 13px;
-    font-style: italic;
-    pointer-events: none;
-    z-index: 5;
-  }
-
-  .rendered-group-box {
-    position: absolute;
-    background-color: rgba(30, 31, 34, 0.9);
-    border: 1px solid #3f4147;
-    border-radius: 8px;
-    padding: 14px;
-    width: 220px;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.5);
-  }
-
-  .rendered-group-title {
-    font-weight: 600;
-    font-size: 13px;
-    color: #ffffff;
-    background-color: #2b2d31;
-    padding: 6px 12px;
-    border-radius: 4px;
-    display: inline-block;
-    margin-bottom: 10px;
-    border-left: 4px solid #5865F2;
-  }
-
-  .rendered-node-badge {
-    background-color: #2b2d31;
-    border: 1px solid #3f4147;
-    color: #dbdee1;
-    padding: 6px 12px;
-    border-radius: 4px;
-    font-size: 12px;
-    display: block;
-    margin-bottom: 6px;
-  }
-
-  /* --- Image zoom lightbox --- */
-  .zoomable-node-image {
-    cursor: zoom-in;
-    transition: opacity 0.15s ease;
-  }
-
-  .zoomable-node-image:hover {
-    opacity: 0.85;
-  }
-
-  .modal-overlay {
-    display: none;
-    position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background-color: rgba(0,0,0,0.75);
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-  }
-
-  .modal-overlay.open { display: flex; }
-
-  .image-lightbox-content {
-    background: none;
-    border: none;
-    box-shadow: none;
-    padding: 0;
-    width: auto;
-    max-width: 92vw;
-    max-height: 92vh;
-    overflow: visible;
     display: flex;
     flex-direction: column;
     align-items: center;
-    position: relative;
+    padding: 60px 20px;
   }
 
-  .image-lightbox-content img {
-    max-width: 92vw;
-    max-height: 85vh;
-    border-radius: 8px;
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.7);
-    display: block;
-  }
-
-  .image-lightbox-close {
-    position: absolute;
-    top: -36px;
-    right: 0;
-    background: none;
-    border: none;
-    color: #ffffff;
-    font-size: 28px;
-    cursor: pointer;
-    line-height: 1;
-  }
-
-  .image-lightbox-close:hover { color: #a3e6be; }
-
-  .image-lightbox-caption {
-    color: #cccccc;
-    font-size: 13px;
-    margin-top: 10px;
+  h1 {
+    margin: 0 0 8px;
+    font-size: 1.8rem;
     text-align: center;
   }
+
+  p.subtitle {
+    color: #999;
+    margin: 0 0 40px;
+    text-align: center;
+    max-width: 480px;
+    font-size: 14px;
+  }
+
+  .link-grid {
+    display: grid;
+    gap: 16px;
+    width: 100%;
+    max-width: 420px;
+  }
+
+  .link-card {
+    display: block;
+    background-color: rgba(30, 31, 34, 0.9);
+    border: 1px solid #3f4147;
+    border-radius: 8px;
+    padding: 18px 20px;
+    text-decoration: none;
+    color: inherit;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+    transition: border-color 0.15s ease;
+  }
+
+  .link-card:hover {
+    border-color: #5865F2;
+  }
+
+  .link-card .card-title {
+    font-weight: 600;
+    font-size: 15px;
+    color: #ffffff;
+    margin-bottom: 4px;
+    border-left: 4px solid #5865F2;
+    padding-left: 10px;
+  }
+
+  .link-card .card-desc {
+    font-size: 12px;
+    color: #999;
+    padding-left: 14px;
+  }
+
+  .link-card.disabled {
+    opacity: 0.5;
+    pointer-events: none;
+  }
+
+  footer {
+    margin-top: 60px;
+    color: #555;
+    font-size: 12px;
+    text-align: center;
+  }
+
+  footer a { color: #8ab4f8; }
 </style>
 </head>
 <body>
 
-<header>
-  <h1>Super Mario Odyssey - Skybox Gallery</h1>
-  <p>All documented skyboxes, one per stage. Click any image to zoom.</p>
-</header>
+<h1>Super Mario Odyssey Skybox Project</h1>
+<p class="subtitle">Community reference material from ongoing skybox testing and documentation.</p>
 
-<div class="page-body">
-  <div class="connection-map-container">
-    <div class="map-canvas-viewport" id="mapCanvasViewport">
-      <div class="map-canvas-inner" id="mapCanvasInner">
-        <!-- Grid layout of group boxes renders here -->
-      </div>
-    </div>
-    <div class="map-instructions" id="mapInstructions">Loading...</div>
-    <div class="map-footer-bar">
-      <div class="map-footer-badge">Made by FireRisingRaging, Onijuiku, and BaconFearMC</div>
-    </div>
-  </div>
+<div class="link-grid">
+  <a class="link-card" href="names/">
+    <div class="card-title">Skybox Names</div>
+    <div class="card-desc">All 136 internal skybox names and where each one is used in-game.</div>
+  </a>
+
+  <a class="link-card" href="skybox/">
+    <div class="card-title">Skybox Gallery</div>
+    <div class="card-desc">Browse every documented skybox in one connection map.</div>
+  </a>
 </div>
 
-<!-- Image Zoom Lightbox -->
-<div class="modal-overlay" id="imageLightbox">
-  <div class="image-lightbox-content">
-    <button class="image-lightbox-close" id="closeLightboxBtn">&times;</button>
-    <img id="lightboxImg" src="" alt="Zoomed node image" />
-    <div class="image-lightbox-caption" id="lightboxCaption"></div>
-  </div>
-</div>
-
-<script>
-  let staticMapGroups = [];
-
-  async function loadSkyboxData() {
-    const res = await fetch('skybox.json');
-    const data = await res.json();
-    // Match the app's original shape: { name, nodes: [{ image }] }
-    staticMapGroups = data.map(entry => ({
-      name: entry.name,
-      nodes: [{ image: entry.image || '' }]
-    }));
-    renderCanvasMap();
-  }
-  function renderCanvasMap() {
-    const innerCanvas = document.getElementById('mapCanvasInner');
-    const instructions = document.getElementById('mapInstructions');
-    if (!innerCanvas) return;
-
-    innerCanvas.innerHTML = '';
-
-    if (staticMapGroups.length === 0) {
-      if (instructions) instructions.textContent = "No connections configured.";
-      return;
-    }
-
-    if (instructions) instructions.textContent = "Skybox Grid.";
-
-    const cols = 6;
-    const startX = 60;
-    const startY = 60;
-    const gapX = 280;
-    const gapY = 220;
-    const cardWidth = 220;
-    const cardEstHeight = 190; // approx card height incl. image + title, for sizing only
-
-    const rows = Math.ceil(staticMapGroups.length / cols);
-
-    // Size the canvas to fit exactly what's there, plus a little breathing
-    // room - no giant empty scroll area past the last row/column.
-    innerCanvas.style.width = (startX + (cols * gapX) + cardWidth - gapX + 40) + 'px';
-    innerCanvas.style.height = (startY + (rows * gapY) + cardEstHeight - gapY + 80) + 'px';
-
-    staticMapGroups.forEach((group, index) => {
-      const col = index % cols;
-      const row = Math.floor(index / cols);
-
-      const groupBox = document.createElement('div');
-      groupBox.className = 'rendered-group-box';
-      groupBox.style.left = (startX + (col * gapX)) + 'px';
-      groupBox.style.top = (startY + (row * gapY)) + 'px';
-
-      let nodesHtml = `<div class="rendered-group-title">${group.name}</div>`;
-      group.nodes.forEach(node => {
-        if (node.image && node.image.trim() !== "") {
-          nodesHtml += `<div class="rendered-node-badge"><img src="${node.image}" alt="Node Image" class="zoomable-node-image" data-caption="${group.name}" style="max-width: 100%; height: auto; display: block; border-radius: 4px;" /></div>`;
-        } else {
-          nodesHtml += `<div class="rendered-node-badge" style="color: #777; font-style: italic;">No Image</div>`;
-        }
-      });
-
-      groupBox.innerHTML = nodesHtml;
-      innerCanvas.appendChild(groupBox);
-    });
-  }
-
-  // --- IMAGE ZOOM LIGHTBOX ---
-  const imageLightbox = document.getElementById('imageLightbox');
-  const lightboxImg = document.getElementById('lightboxImg');
-  const lightboxCaption = document.getElementById('lightboxCaption');
-
-  document.addEventListener('click', (e) => {
-    const img = e.target.closest('.zoomable-node-image');
-    if (!img) return;
-    lightboxImg.src = img.src;
-    lightboxCaption.textContent = img.dataset.caption || '';
-    imageLightbox.classList.add('open');
-  });
-
-  document.getElementById('closeLightboxBtn').addEventListener('click', () => {
-    imageLightbox.classList.remove('open');
-  });
-
-  imageLightbox.addEventListener('click', (e) => {
-    if (e.target === imageLightbox) imageLightbox.classList.remove('open');
-  });
-
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && imageLightbox.classList.contains('open')) {
-      imageLightbox.classList.remove('open');
-    }
-  });
-
-  loadSkyboxData();
-</script>
+<footer>
+  Images hosted from this repository via <a href="https://www.jsdelivr.com/" target="_blank" rel="noopener">jsDelivr</a>.
+</footer>
 
 </body>
 </html>
