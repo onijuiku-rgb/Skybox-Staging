@@ -7,6 +7,20 @@
 <style>
   * { box-sizing: border-box; }
 
+  html, body {
+    /* Dark-theme the OUTER page scrollbar too, in case that's the light
+       one showing up - not just the inner table's own scrollbar below. */
+    scrollbar-color: #3d3d3d #121212;
+    scrollbar-width: thin;
+  }
+
+  html::-webkit-scrollbar, body::-webkit-scrollbar { width: 12px; height: 12px; }
+  html::-webkit-scrollbar-track, body::-webkit-scrollbar-track { background: #121212; }
+  html::-webkit-scrollbar-thumb, body::-webkit-scrollbar-thumb {
+    background-color: #3d3d3d;
+    border-radius: 6px;
+  }
+
   body {
     margin: 0;
     background-color: #121212;
@@ -42,6 +56,41 @@
 
   #seedBtn { margin-bottom: 20px; }
 
+  #allProgressBtn { margin-bottom: 20px; margin-left: 10px; }
+
+  .progress-list {
+    display: none;
+    flex-direction: column;
+    gap: 6px;
+    max-width: 500px;
+    margin-bottom: 20px;
+  }
+
+  .progress-list.open { display: flex; }
+
+  .progress-list-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #1a1a1a;
+    border: 1px solid #333333;
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+
+  .progress-list-row .kingdom-name { color: #ddd; }
+  .progress-list-row .kingdom-pct { font-weight: 700; color: #fbe38e; }
+  .progress-list-row .kingdom-pct.complete { color: #17c964; }
+
+  .progress-list-row.total-row {
+    margin-top: 4px;
+    border-top: 2px solid #3d3d3d;
+    background-color: #14251c;
+  }
+
+  .progress-list-row.total-row .kingdom-name { color: #ffffff; font-weight: 700; }
+
   /* ===================== KINGDOM TABS ===================== */
   .tab-bar {
     display: flex;
@@ -72,6 +121,28 @@
     border-color: #5865F2;
   }
 
+  /* ===================== SKYBOX JUMP SEARCH ===================== */
+  .jump-search-input {
+    background-color: #1a1a1a;
+    border: 1px solid #3d3d3d;
+    color: #ffffff;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    outline: none;
+    width: 280px;
+    margin-bottom: 12px;
+  }
+
+  .jump-search-input:focus { border-color: #189844; }
+
+  /* Briefly flashed onto a column's header + cells after jumping to it
+     via the search box, so it's obvious which one you landed on. */
+  .column-highlight {
+    background-color: #2a2a4a !important;
+    transition: background-color 1.5s ease;
+  }
+
   /* ===================== MAIN STATUS TABLE ===================== */
   .table-scroll-wrapper {
     overflow-x: auto;
@@ -90,22 +161,39 @@
   .table-scroll-wrapper { scrollbar-color: #3d3d3d #1a1a1a; scrollbar-width: thin; }
 
   table {
-    border-collapse: collapse;
+    border-collapse: separate; /* "separate" (not "collapse") is what lets border-radius/spacing work per-cell instead of one harsh uniform grid */
+    border-spacing: 0;
     width: max-content;
   }
 
   th, td {
-    padding: 8px 10px;
+    padding: 10px 12px;
     text-align: left;
-    border-bottom: 1px solid #2a2a2a;
     font-size: 13px;
     white-space: nowrap;
+    border-bottom: 1px solid #232323; /* softer than the old #2a2a2a - less "spreadsheet gridline" contrast */
   }
 
   th {
     color: #a3e6be;
+    font-weight: 600;
     border-bottom: 2px solid #17382d;
     background-color: #121212;
+    padding-bottom: 12px;
+  }
+
+  /* Subtle row highlight on hover - a spreadsheet doesn't do this, a
+     real app does, so this alone goes a long way toward not looking
+     like Google Sheets. */
+  tbody tr:hover td {
+    background-color: #1a1a1a;
+  }
+
+  /* Sticky first column needs its OWN hover background applied directly
+     (not inherited), since position:sticky elements paint above the row's
+     own background in some browsers. */
+  tbody tr:hover td:first-child {
+    background-color: #1e1f22;
   }
 
   /* Keeps the Subarea name visible while scrolling right through all
@@ -118,14 +206,29 @@
   }
 
   select {
-    background-color: #2b2d31;
+    appearance: none;         /* removes the browser's native control chrome entirely - */
+    -webkit-appearance: none; /* this is what was causing the small white box on hover: */
+    -moz-appearance: none;    /* without this, the browser draws its own native arrow */
+    background-color: #2b2d31;/* button ON TOP of our custom pill styling. */
     color: #fff;
     border: 1px solid #3f4147;
     border-radius: 12px;
-    padding: 4px 10px;
+    padding: 4px 26px 4px 10px; /* extra right padding makes room for the custom arrow below */
     font-size: 12px;
     font-weight: 600;
     cursor: pointer;
+    outline: none;
+
+    /* Hand-drawn dropdown arrow, since appearance:none removes the
+       native one entirely - this SVG is just a small down-chevron. */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%23ffffff' stroke-width='2'%3E%3Cpath d='M6 8l4 4 4-4'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    background-size: 14px;
+  }
+
+  select:focus {
+    border-color: #5865F2; /* replaces the browser's default focus ring, which also looked out of place */
   }
 
   select.status-good { background-color: #1c5c34; border-color: #1c5c34; }
@@ -245,8 +348,16 @@
 <div id="statusLine">Loading Kingdom list...</div>
 
 <button id="seedBtn">Seed All Kingdoms (real data - only needed once)</button>
+<button id="allProgressBtn">Show All Kingdoms Progress</button>
+
+<div class="progress-list" id="allProgressList"></div>
 
 <div class="tab-bar" id="tabBar"></div>
+
+<div>
+  <input type="text" class="jump-search-input" id="skyboxJumpInput" list="skyboxDatalist" placeholder="Jump to skybox column...">
+  <datalist id="skyboxDatalist"></datalist>
+</div>
 
 <div class="table-scroll-wrapper">
   <table id="mainTable">
@@ -284,6 +395,7 @@
     getFirestore,
     collection,
     doc,
+    getDocs,
     setDoc,
     onSnapshot
   } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
@@ -307,7 +419,6 @@
     "Good to Use",
     "Looks Bad - Don't Use",
     "Lags Kingdom",
-    "Lag(emu)",
     "Good but Dark",
     "Good but Bright",
     "Good but Foggy",
@@ -316,13 +427,31 @@
 
   function statusClass(value) {
     if (value === "Good to Use") return "status-good";
-    if (value === "Looks Bad - Don't Use" || value === "Lags Kingdom" || value === "Lag(emu)") return "status-bad";
+    if (value === "Looks Bad - Don't Use" || value === "Lags Kingdom") return "status-bad";
     if (value && value !== "") return "status-warn";
     return "status-neutral";
   }
 
+  // One distinct color per status, used to color each individual OPTION
+  // inside the open dropdown list (statusClass above only sorts things
+  // into 4 buckets for the closed pill - this gives every status its own
+  // shade so they're visually distinguishable while the list is open).
+  function optionColor(value) {
+    const colors = {
+      "": "#2b2d31",
+      "Good to Use": "#1c5c34",
+      "Looks Bad - Don't Use": "#5c1c1c",
+      "Lags Kingdom": "#6b2c1c",
+      "Good but Dark": "#1c3a5c",
+      "Good but Bright": "#5c4a1c",
+      "Good but Foggy": "#3a4a5c",
+      "Uncertain": "#4a1c5c"
+    };
+    return colors[value] || "#2b2d31";
+  }
+
   function statusTextClass(value) {
-    if (value === "Looks Bad - Don't Use" || value === "Lags Kingdom" || value === "Lag(emu)") return "status-text-bad";
+    if (value === "Looks Bad - Don't Use" || value === "Lags Kingdom") return "status-text-bad";
     if (value && value !== "" && value !== "Good to Use") return "status-text-warn";
     return "status-text-neutral";
   }
@@ -350,7 +479,18 @@
 
     buildFilterPanel();
     buildTabs();
+    populateSkyboxDatalist();
     switchKingdom(KINGDOMS[0].slug); // open on the first Kingdom by default
+  }
+
+  function populateSkyboxDatalist() {
+    const datalist = document.getElementById('skyboxDatalist');
+    datalist.innerHTML = '';
+    SKYBOXES.forEach(sb => {
+      const option = document.createElement('option');
+      option.value = sb;
+      datalist.appendChild(option);
+    });
   }
 
   function buildTabs() {
@@ -461,6 +601,8 @@
           option.value = opt;
           option.textContent = opt === "" ? "-- Select --" : opt;
           if (opt === currentValue) option.selected = true;
+          option.style.backgroundColor = optionColor(opt); // colors the OPEN dropdown list, not just the closed pill
+          option.style.color = '#ffffff';
           select.appendChild(option);
         });
 
@@ -602,6 +744,108 @@
       }
     }
     setStatusLine(`Done - seeded ${written} subareas across ${KINGDOMS.length} Kingdoms.`, "connected");
+  });
+
+  // ===================== WHEEL-TO-SCROLL-SIDEWAYS =====================
+  // Normally scrolling sideways needs Shift+wheel. Since this table is
+  // ALL horizontal scrolling (rows don't scroll independently), we
+  // redirect a normal vertical wheel motion into horizontal movement
+  // whenever the cursor is over the table specifically.
+  document.querySelector('.table-scroll-wrapper').addEventListener('wheel', (e) => {
+    const wrapper = e.currentTarget;
+    // Only hijack the wheel if there's actually somewhere to scroll to -
+    // otherwise this would block normal page scrolling on short tables.
+    if (wrapper.scrollWidth <= wrapper.clientWidth) return;
+    e.preventDefault();
+    wrapper.scrollLeft += e.deltaY;
+  }, { passive: false });
+
+  // ===================== ALL-KINGDOMS + TOTAL PROGRESS =====================
+  // Unlike the per-tab counter (which stays live via onSnapshot), this
+  // does a ONE-TIME read across all 17 collections when you click the
+  // button - keeping 17 permanent live listeners running just for a
+  // summary panel would be wasteful. Click the button again any time to
+  // refresh it with the latest numbers.
+  document.getElementById('allProgressBtn').addEventListener('click', async () => {
+    const panel = document.getElementById('allProgressList');
+    const isOpen = panel.classList.contains('open');
+
+    if (isOpen) {
+      panel.classList.remove('open');
+      return;
+    }
+
+    panel.classList.add('open');
+    panel.innerHTML = '<div class="progress-list-row"><span class="kingdom-name">Loading all 17 Kingdoms...</span></div>';
+
+    let grandFilled = 0;
+    let grandTotal = 0;
+    const rows = [];
+
+    for (const kingdom of KINGDOMS) {
+      const snapshot = await getDocs(collection(db, kingdom.slug));
+      const totalCells = kingdom.subareas.length * SKYBOXES.length;
+      let filled = 0;
+
+      snapshot.forEach(docSnap => {
+        const statuses = docSnap.data().statuses || {};
+        SKYBOXES.forEach(sb => {
+          if ((statuses[sb] || "").trim() !== "") filled++;
+        });
+      });
+
+      grandFilled += filled;
+      grandTotal += totalCells;
+
+      const pct = totalCells > 0 ? (filled / totalCells) * 100 : 0;
+      rows.push({ label: kingdom.label, filled, totalCells, pct });
+    }
+
+    panel.innerHTML = '';
+    rows.forEach(r => {
+      const row = document.createElement('div');
+      row.className = 'progress-list-row';
+      row.innerHTML = `
+        <span class="kingdom-name">${r.label}</span>
+        <span class="kingdom-pct${r.filled === r.totalCells ? ' complete' : ''}">${r.pct.toFixed(2)}%</span>
+      `;
+      panel.appendChild(row);
+    });
+
+    const grandPct = grandTotal > 0 ? (grandFilled / grandTotal) * 100 : 0;
+    const totalRow = document.createElement('div');
+    totalRow.className = 'progress-list-row total-row';
+    totalRow.innerHTML = `
+      <span class="kingdom-name">Total</span>
+      <span class="kingdom-pct${grandFilled === grandTotal ? ' complete' : ''}">${grandFilled} / ${grandTotal} (${grandPct.toFixed(2)}%)</span>
+    `;
+    panel.appendChild(totalRow);
+  });
+
+  // ===================== SKYBOX JUMP SEARCH =====================
+  // Fires when the person picks an exact match from the datalist
+  // suggestions, or types a full name and presses Enter. Scrolls that
+  // column into view and briefly highlights it so it's obvious you
+  // landed in the right place among the 136 columns.
+  document.getElementById('skyboxJumpInput').addEventListener('change', (e) => {
+    const query = e.target.value.trim();
+    const colIndex = SKYBOXES.indexOf(query);
+    if (colIndex === -1) return; // not an exact skybox name yet - ignore until they pick a valid one
+
+    const headerCells = document.querySelectorAll('#mainTableHead th');
+    const targetTh = headerCells[colIndex + 1]; // +1 because column 0 is "Subarea"
+    if (!targetTh) return;
+
+    targetTh.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+
+    // Clear any previous highlight, then flash this column
+    document.querySelectorAll('.column-highlight').forEach(el => el.classList.remove('column-highlight'));
+    targetTh.classList.add('column-highlight');
+    document.querySelectorAll(`td[id$="-${query}"]`).forEach(td => td.classList.add('column-highlight'));
+
+    setTimeout(() => {
+      document.querySelectorAll('.column-highlight').forEach(el => el.classList.remove('column-highlight'));
+    }, 2000);
   });
 
   init();
