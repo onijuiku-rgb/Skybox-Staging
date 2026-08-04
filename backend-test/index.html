@@ -408,6 +408,43 @@
     padding: 16px 0;
     display: none;
   }
+
+  /* ===================== MOBILE / NARROW VIEWPORTS =====================
+     Below this width the .auth-widget and .progress-widget give up their
+     fixed top-right pinning (which was overlapping the h1/subtitle on
+     phones) and drop into normal document flow instead, stacked above
+     the title. */
+  @media (max-width: 700px) {
+    body { padding: 16px; }
+
+    .auth-widget {
+      position: static;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+
+    .auth-status {
+      white-space: normal;
+      word-break: break-word;
+    }
+
+    .progress-widget {
+      position: static;
+      margin-bottom: 16px;
+    }
+
+    .progress-list, .progress-list.open {
+      width: 100%;
+      max-width: 340px;
+    }
+
+    .jump-search-input {
+      width: 100%;
+      max-width: 340px;
+    }
+
+    h1 { font-size: 1.1rem; }
+  }
 </style>
 </head>
 <body>
