@@ -380,12 +380,17 @@
   .summary-table {
     width: 100%;
     border-collapse: collapse;
+    table-layout: fixed; /* without this, the unbroken camelCase skybox
+      names below force the table wider than its container - fixed
+      layout + word-break on the cells (below) lets them wrap instead. */
   }
 
   .summary-table th {
     text-align: left;
     font-size: 12px;
     color: #999;
+    white-space: normal;
+    overflow-wrap: break-word;
     border-bottom: 1px solid #2a2a2a;
     padding: 8px 10px;
     background: none;
@@ -396,7 +401,13 @@
     border-bottom: 1px solid #222;
     font-size: 13px;
     white-space: normal;
+    overflow-wrap: break-word;
+    word-break: break-word;
   }
+
+  .summary-table th:nth-child(1), .summary-table td:nth-child(1) { width: 28%; }
+  .summary-table th:nth-child(2), .summary-table td:nth-child(2) { width: 40%; }
+  .summary-table th:nth-child(3), .summary-table td:nth-child(3) { width: 32%; }
 
   .summary-table .status-text-bad { color: #f87171; font-weight: 600; }
   .summary-table .status-text-warn { color: #fbe38e; font-weight: 600; }
@@ -409,18 +420,25 @@
     display: none;
   }
 
+  .mobile-scroll-hint { display: none; }
+
   /* ===================== MOBILE / NARROW VIEWPORTS =====================
      Below this width the .auth-widget and .progress-widget give up their
      fixed top-right pinning (which was overlapping the h1/subtitle on
      phones) and drop into normal document flow instead, stacked above
-     the title. */
+     the title. Touch targets also grow here - the desktop sizes (30-34px)
+     are fine for a mouse pointer but too small to reliably tap. */
   @media (max-width: 700px) {
     body { padding: 16px; }
+
+    h1 { font-size: 1.15rem; }
+    p.subtitle { font-size: 12px; }
 
     .auth-widget {
       position: static;
       flex-wrap: wrap;
       margin-bottom: 12px;
+      width: 100%;
     }
 
     .auth-status {
@@ -431,19 +449,59 @@
     .progress-widget {
       position: static;
       margin-bottom: 16px;
+      width: 100%;
     }
+
+    #allProgressBtn { width: 100%; }
 
     .progress-list, .progress-list.open {
       width: 100%;
-      max-width: 340px;
+      max-width: none;
     }
 
     .jump-search-input {
       width: 100%;
-      max-width: 340px;
+      max-width: none;
     }
 
-    h1 { font-size: 1.1rem; }
+    /* Bigger tap targets across the board - default button/select sizing
+       is comfortable for a mouse but too cramped for a thumb. */
+    button, .tab-btn { min-height: 42px; padding: 10px 16px; }
+    select { min-height: 36px; padding-top: 8px; padding-bottom: 8px; }
+    button, select, input, .tab-btn { touch-action: manipulation; }
+
+    .tab-bar { gap: 8px; margin-bottom: 10px; }
+
+    /* The main status table stays a horizontally-scrollable grid on
+       mobile (matching the spreadsheet-like data it holds - a card
+       view of 136 skybox columns per subarea would be far longer to
+       scroll than swiping sideways through a frozen-first-column grid,
+       same pattern Sheets itself uses on mobile). Momentum scrolling +
+       an explicit hint make that swipe discoverable and pleasant. */
+    .table-scroll-wrapper { -webkit-overflow-scrolling: touch; margin-bottom: 20px; }
+    th, td { padding: 8px 10px; font-size: 12.5px; }
+
+    .mobile-scroll-hint {
+      display: block;
+      font-size: 11px;
+      color: #777;
+      margin: 0 0 6px;
+    }
+
+    /* Summary controls stack to full-width rows instead of cramming
+       inline - inline wrapping left the search box awkwardly narrow. */
+    .summary-header { gap: 10px; }
+    .summary-controls { width: 100%; }
+    .summary-controls > * { flex: 1 1 100%; }
+
+    .summary-table th, .summary-table td { padding: 10px 8px; font-size: 12.5px; }
+
+    #filterPanel label { min-height: 28px; }
+  }
+
+  @media (max-width: 400px) {
+    h1 { font-size: 1.05rem; }
+    th, td { padding: 7px 8px; font-size: 12px; }
   }
 </style>
 </head>
@@ -471,6 +529,7 @@
   <datalist id="skyboxDatalist"></datalist>
 </div>
 
+<p class="mobile-scroll-hint">Swipe sideways to see all skyboxes &rarr;</p>
 <div class="table-scroll-wrapper">
   <table id="mainTable">
     <thead id="mainTableHead"></thead>
