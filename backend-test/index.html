@@ -203,8 +203,8 @@
   /* ===================== MAIN STATUS TABLE ===================== */
   .table-scroll-wrapper {
     overflow-x: auto;
-    border: 1px solid #2a2a2a;
-    border-radius: 8px;
+    border: none;
+    padding: 4px 0 8px;
     margin-bottom: 30px;
   }
 
@@ -217,50 +217,59 @@
   }
   .table-scroll-wrapper { scrollbar-color: #3d3d3d #1a1a1a; scrollbar-width: thin; }
 
+  /* Rows read as their own separated card (Notion/Linear database-view
+     style) rather than one continuous ruled spreadsheet grid - vertical
+     border-spacing does the row-separating instead of border lines, and
+     each row gets its own background so it reads as a distinct block. */
   table {
     border-collapse: separate; /* "separate" (not "collapse") is what lets border-radius/spacing work per-cell instead of one harsh uniform grid */
-    border-spacing: 0;
+    border-spacing: 0 8px;
     width: max-content;
   }
 
   th, td {
-    padding: 10px 12px;
+    padding: 13px 16px;
     text-align: left;
     font-size: 13px;
     white-space: nowrap;
-    border-bottom: 1px solid #232323; /* softer than the old #2a2a2a - less "spreadsheet gridline" contrast */
+    border-bottom: none;
   }
 
   th {
     color: #a3e6be;
-    font-weight: 600;
-    border-bottom: 2px solid #17382d;
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
     background-color: #121212;
-    padding-bottom: 12px;
+    padding-bottom: 10px;
   }
 
-  /* Subtle row highlight on hover - a spreadsheet doesn't do this, a
-     real app does, so this alone goes a long way toward not looking
-     like Google Sheets. */
+  tbody tr td {
+    background-color: #1c1d21;
+  }
+
+  tbody tr td:first-child { border-radius: 10px 0 0 10px; font-weight: 600; }
+  tbody tr td:last-child { border-radius: 0 10px 10px 0; }
+
+  /* A spreadsheet doesn't highlight rows on hover, a real app does - this
+     alone goes a long way toward not looking like Google Sheets. */
   tbody tr:hover td {
-    background-color: #1a1a1a;
+    background-color: #24262c;
   }
 
-  /* Sticky first column needs its OWN hover background applied directly
-     (not inherited), since position:sticky elements paint above the row's
-     own background in some browsers. */
-  tbody tr:hover td:first-child {
-    background-color: #1e1f22;
-  }
-
-  /* Keeps the Subarea name visible while scrolling right through all
-     136 skybox columns - same idea as a frozen column in a spreadsheet. */
+  /* Sticky first column needs its OWN background applied directly (not
+     inherited), since position:sticky elements paint above the row's own
+     background in some browsers - true for both the resting and hover state. */
   th:first-child, td:first-child {
     position: sticky;
     left: 0;
-    background-color: #121212;
     z-index: 1;
   }
+
+  th:first-child { background-color: #121212; }
+  td:first-child { background-color: #1c1d21; }
+  tbody tr:hover td:first-child { background-color: #24262c; }
 
   select {
     appearance: none;         /* removes the browser's native control chrome entirely - */
@@ -269,7 +278,7 @@
     background-color: #2b2d31;/* button ON TOP of our custom pill styling. */
     color: #fff;
     border: 1px solid #3f4147;
-    border-radius: 12px;
+    border-radius: 7px;
     padding: 4px 26px 4px 10px; /* extra right padding makes room for the custom arrow below */
     font-size: 12px;
     font-weight: 600;
@@ -288,10 +297,22 @@
     border-color: #5865F2; /* replaces the browser's default focus ring, which also looked out of place */
   }
 
-  select.status-good { background-color: #1c5c34; border-color: #1c5c34; }
-  select.status-bad { background-color: #5c1c1c; border-color: #5c1c1c; }
-  select.status-warn { background-color: #5c4a1c; border-color: #5c4a1c; }
-  select.status-neutral { background-color: #2b2d31; }
+  /* One color per status, spread around the hue wheel instead of the old
+     4-bucket good/bad/warn/neutral grouping - "Looks Bad" and "Lags
+     Kingdom" used to render as the same red, and all 3 "Good but X"
+     caveats used to render as the same yellow, which made them hard to
+     tell apart at a glance. */
+  select.status-good, .status-pill-readonly.status-good { background-color: #15803d; border-color: #15803d; }
+  select.status-avoid, .status-pill-readonly.status-avoid { background-color: #c2410c; border-color: #c2410c; }
+  select.status-lags, .status-pill-readonly.status-lags { background-color: #b91c1c; border-color: #b91c1c; }
+  select.status-dark, .status-pill-readonly.status-dark { background-color: #6d28d9; border-color: #6d28d9; }
+  select.status-bright, .status-pill-readonly.status-bright { background-color: #92720a; border-color: #92720a; }
+  select.status-foggy, .status-pill-readonly.status-foggy { background-color: #0e7490; border-color: #0e7490; }
+  select.status-uncertain, .status-pill-readonly.status-uncertain { background-color: #e5e7eb; border-color: #e5e7eb; color: #18181b; }
+  /* Uncertain's pale background needs a dark dropdown arrow instead of
+     the shared white one, or it'd be invisible against it. */
+  select.status-uncertain { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%2318181b' stroke-width='2'%3E%3Cpath d='M6 8l4 4 4-4'/%3E%3C/svg%3E"); }
+  select.status-neutral, .status-pill-readonly.status-neutral { background-color: #2b2d31; }
 
   /* Read-only version of the same pill, shown instead of a <select> to
      anyone who isn't signed in as an approved editor. Same look, but a
@@ -299,7 +320,7 @@
   .status-pill-readonly {
     display: inline-block;
     padding: 4px 12px;
-    border-radius: 12px;
+    border-radius: 7px;
     font-size: 12px;
     font-weight: 600;
     color: #fff;
@@ -409,8 +430,13 @@
   .summary-table th:nth-child(2), .summary-table td:nth-child(2) { width: 40%; }
   .summary-table th:nth-child(3), .summary-table td:nth-child(3) { width: 32%; }
 
-  .summary-table .status-text-bad { color: #f87171; font-weight: 600; }
-  .summary-table .status-text-warn { color: #fbe38e; font-weight: 600; }
+  .summary-table .status-text-good { color: #4ade80; font-weight: 600; }
+  .summary-table .status-text-avoid { color: #fb923c; font-weight: 600; }
+  .summary-table .status-text-lags { color: #f87171; font-weight: 600; }
+  .summary-table .status-text-dark { color: #c4b5fd; font-weight: 600; }
+  .summary-table .status-text-bright { color: #fbe38e; font-weight: 600; }
+  .summary-table .status-text-foggy { color: #67e8f9; font-weight: 600; }
+  .summary-table .status-text-uncertain { color: #f4f4f5; font-weight: 700; }
   .summary-table .status-text-neutral { color: #999; font-style: italic; }
 
   #emptySummary {
@@ -479,6 +505,7 @@
        same pattern Sheets itself uses on mobile). Momentum scrolling +
        an explicit hint make that swipe discoverable and pleasant. */
     .table-scroll-wrapper { -webkit-overflow-scrolling: touch; margin-bottom: 20px; }
+    table { border-spacing: 0 6px; }
     th, td { padding: 8px 10px; font-size: 12.5px; }
 
     .mobile-scroll-hint {
@@ -606,34 +633,53 @@
     "Uncertain"
   ];
 
+  // Each status gets its own class/color (not grouped into good/bad/warn
+  // buckets) so e.g. "Looks Bad" and "Lags Kingdom" - or the three
+  // "Good but X" caveats - don't render as the same shade as each other.
   function statusClass(value) {
     if (value === "Good to Use") return "status-good";
-    if (value === "Looks Bad - Don't Use" || value === "Lags Kingdom") return "status-bad";
-    if (value && value !== "") return "status-warn";
+    if (value === "Looks Bad - Don't Use") return "status-avoid";
+    if (value === "Lags Kingdom") return "status-lags";
+    if (value === "Good but Dark") return "status-dark";
+    if (value === "Good but Bright") return "status-bright";
+    if (value === "Good but Foggy") return "status-foggy";
+    if (value === "Uncertain") return "status-uncertain";
     return "status-neutral";
   }
 
-  // One distinct color per status, used to color each individual OPTION
-  // inside the open dropdown list (statusClass above only sorts things
-  // into 4 buckets for the closed pill - this gives every status its own
-  // shade so they're visually distinguishable while the list is open).
+  // Same palette as the select.status-* / .status-pill-readonly.status-*
+  // CSS rules, kept here as inline styles because <option> background
+  // colors don't reliably respond to CSS classes across browsers - this
+  // colors each OPTION inside the open dropdown list to match its closed-
+  // pill color.
   function optionColor(value) {
     const colors = {
       "": "#2b2d31",
-      "Good to Use": "#1c5c34",
-      "Looks Bad - Don't Use": "#5c1c1c",
-      "Lags Kingdom": "#6b2c1c",
-      "Good but Dark": "#1c3a5c",
-      "Good but Bright": "#5c4a1c",
-      "Good but Foggy": "#3a4a5c",
-      "Uncertain": "#4a1c5c"
+      "Good to Use": "#15803d",
+      "Looks Bad - Don't Use": "#c2410c",
+      "Lags Kingdom": "#b91c1c",
+      "Good but Dark": "#6d28d9",
+      "Good but Bright": "#92720a",
+      "Good but Foggy": "#0e7490",
+      "Uncertain": "#e5e7eb"
     };
     return colors[value] || "#2b2d31";
   }
 
+  // Uncertain's option background is near-white, so it needs dark text -
+  // every other status keeps the white text the dropdown otherwise uses.
+  function optionTextColor(value) {
+    return value === "Uncertain" ? "#18181b" : "#ffffff";
+  }
+
   function statusTextClass(value) {
-    if (value === "Looks Bad - Don't Use" || value === "Lags Kingdom") return "status-text-bad";
-    if (value && value !== "" && value !== "Good to Use") return "status-text-warn";
+    if (value === "Good to Use") return "status-text-good";
+    if (value === "Looks Bad - Don't Use") return "status-text-avoid";
+    if (value === "Lags Kingdom") return "status-text-lags";
+    if (value === "Good but Dark") return "status-text-dark";
+    if (value === "Good but Bright") return "status-text-bright";
+    if (value === "Good but Foggy") return "status-text-foggy";
+    if (value === "Uncertain") return "status-text-uncertain";
     return "status-text-neutral";
   }
 
@@ -837,8 +883,7 @@
           // every visitor sees by default, and what non-approved signed-in
           // users see too - only approved editors get the real dropdown.
           const pill = document.createElement('span');
-          pill.className = 'status-pill-readonly';
-          pill.style.backgroundColor = optionColor(currentValue);
+          pill.className = 'status-pill-readonly ' + statusClass(currentValue);
           pill.textContent = currentValue === "" ? "-- Not set --" : currentValue;
           td.innerHTML = '';
           td.appendChild(pill);
@@ -853,7 +898,7 @@
           option.textContent = opt === "" ? "-- Select --" : opt;
           if (opt === currentValue) option.selected = true;
           option.style.backgroundColor = optionColor(opt); // colors the OPEN dropdown list, not just the closed pill
-          option.style.color = '#ffffff';
+          option.style.color = optionTextColor(opt);
           select.appendChild(option);
         });
 
