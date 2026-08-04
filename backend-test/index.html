@@ -56,17 +56,41 @@
 
   #seedBtn { margin-bottom: 20px; }
 
-  #allProgressBtn { margin-bottom: 20px; margin-left: 10px; }
+  /* Fixed to the top-right corner of the viewport, so it stays put and
+     out of the way regardless of how tall the rest of the page gets. */
+  .progress-widget {
+    position: fixed;
+    top: 20px;
+    right: 24px;
+    z-index: 100;
+  }
+
+  #allProgressBtn {
+    background-color: #1a1a1a;
+    border: 1px solid #3d3d3d;
+    color: #a3e6be;
+  }
 
   .progress-list {
     display: none;
     flex-direction: column;
     gap: 6px;
-    max-width: 500px;
-    margin-bottom: 20px;
+    width: 280px;
+    max-height: 70vh;
+    overflow-y: auto;
+    margin-top: 8px;
+    padding: 10px;
+    background-color: #17181a;
+    border: 1px solid #333;
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.6);
   }
 
   .progress-list.open { display: flex; }
+
+  .progress-list::-webkit-scrollbar { width: 10px; }
+  .progress-list::-webkit-scrollbar-track { background: #1a1a1a; }
+  .progress-list::-webkit-scrollbar-thumb { background-color: #3d3d3d; border-radius: 5px; }
 
   .progress-list-row {
     display: flex;
@@ -348,9 +372,11 @@
 <div id="statusLine">Loading Kingdom list...</div>
 
 <button id="seedBtn">Seed All Kingdoms (real data - only needed once)</button>
-<button id="allProgressBtn">Show All Kingdoms Progress</button>
 
-<div class="progress-list" id="allProgressList"></div>
+<div class="progress-widget">
+  <button id="allProgressBtn">All Kingdoms Progress</button>
+  <div class="progress-list" id="allProgressList"></div>
+</div>
 
 <div class="tab-bar" id="tabBar"></div>
 
@@ -730,6 +756,13 @@
 
   // ===================== SEED ALL KINGDOMS =====================
   document.getElementById('seedBtn').addEventListener('click', async () => {
+    const confirmed = confirm(
+      "This writes the ORIGINAL spreadsheet snapshot into Firestore, " +
+      "overwriting anything changed since the first time this was clicked. " +
+      "You only need this once, ever. Are you sure you want to do this now?"
+    );
+    if (!confirmed) return;
+
     setStatusLine("Fetching real spreadsheet data...", "");
     const res = await fetch('seed-data.json');
     const seedData = await res.json(); // { slug: { subarea: { skybox: status } } }
