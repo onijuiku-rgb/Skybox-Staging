@@ -58,6 +58,41 @@
 
   /* Fixed to the top-right corner of the viewport, so it stays put and
      out of the way regardless of how tall the rest of the page gets. */
+  .auth-widget {
+    position: fixed;
+    top: 20px;
+    right: 260px; /* sits to the left of the progress widget, both pinned top-right */
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  #signInBtn {
+    background-color: #1a1a1a;
+    border: 1px solid #3d3d3d;
+    color: #e6e6e6;
+  }
+
+  .auth-status {
+    font-size: 12px;
+    padding: 6px 12px;
+    border-radius: 20px;
+    white-space: nowrap;
+  }
+
+  .auth-status.editor {
+    background-color: #12351f;
+    color: #17c964;
+    border: 1px solid #17c964;
+  }
+
+  .auth-status.readonly {
+    background-color: #1a1a1a;
+    color: #999;
+    border: 1px solid #3d3d3d;
+  }
+
   .progress-widget {
     position: fixed;
     top: 20px;
@@ -260,6 +295,19 @@
   select.status-warn { background-color: #5c4a1c; border-color: #5c4a1c; }
   select.status-neutral { background-color: #2b2d31; }
 
+  /* Read-only version of the same pill, shown instead of a <select> to
+     anyone who isn't signed in as an approved editor. Same look, but a
+     plain span - nothing to click, nothing to change. */
+  .status-pill-readonly {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #fff;
+    cursor: default;
+  }
+
   /* ===================== SUMMARY / ISSUES SECTION ===================== */
   .summary-header {
     display: flex;
@@ -366,6 +414,10 @@
 </head>
 <body>
 
+<div class="auth-widget" id="authWidget">
+  <button id="signInBtn">Sign in with Google</button>
+</div>
+
 <h1>Firebase Test - All Kingdoms Prototype</h1>
 <p class="subtitle">Real spreadsheet data, all 17 Kingdoms, reading and writing live from Firestore.</p>
 
@@ -421,10 +473,18 @@
     getFirestore,
     collection,
     doc,
+    getDoc,
     getDocs,
     setDoc,
     onSnapshot
   } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+  import {
+    getAuth,
+    GoogleAuthProvider,
+    signInWithPopup,
+    signOut,
+    onAuthStateChanged
+  } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyAzJhU7wI1iFPEExIgCD-DpZ8sKljtH7Yk",
@@ -437,6 +497,8 @@
 
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
+  const auth = getAuth(app);
+  const googleProvider = new GoogleAuthProvider();
 
   // ===================== STATUS OPTIONS =====================
   // Same set/meanings as the Apps Script version's dropdown pills.
@@ -484,6 +546,8 @@
 
   // ===================== GLOBAL STATE =====================
   let KINGDOMS = [];   // [{ slug, label, subareas: [...] }, ...] - loaded from kingdoms-config.json
+  let currentUser = null; // the signed-in Firebase Auth user object, or null if signed out
+  let isEditor = false;   // true only if currentUser's email exists in the authorizedEditors collection
   let SKYBOXES = [];   // shared 136-name list, same order for every Kingdom
   let activeSlug = null;
   let activeLabel = '';
@@ -495,6 +559,60 @@
   let hiddenStatuses = new Set(["Good to Use"]); // "Good to Use" hidden by default - the summary table is meant to highlight problems, not everything
   let subareaFilter = "";
   let searchQuery = "";
+
+  // ===================== AUTH: SIGN IN / OUT / ALLOWLIST CHECK =====================
+
+  function renderAuthWidget() {
+    const widget = document.getElementById('authWidget');
+    widget.innerHTML = '';
+
+    if (!currentUser) {
+      const btn = document.createElement('button');
+      btn.id = 'signInBtn';
+      btn.textContent = 'Sign in with Google';
+      btn.addEventListener('click', async () => {
+        try { await signInWithPopup(auth, googleProvider); }
+        catch (err) { setStatusLine("Sign-in failed: " + err.message, "error"); }
+      });
+      widget.appendChild(btn);
+      return;
+    }
+
+    const status = document.createElement('span');
+    status.className = 'auth-status ' + (isEditor ? 'editor' : 'readonly');
+    status.textContent = isEditor
+      ? `Editing enabled (${currentUser.email})`
+      : `Read-only (${currentUser.email})`;
+    widget.appendChild(status);
+
+    const signOutBtn = document.createElement('button');
+    signOutBtn.textContent = 'Sign out';
+    signOutBtn.addEventListener('click', () => signOut(auth));
+    widget.appendChild(signOutBtn);
+  }
+
+  // Runs automatically any time sign-in state changes (on load if
+  // already signed in from a previous visit, right after a successful
+  // sign-in, and right after sign-out).
+  onAuthStateChanged(auth, async (user) => {
+    currentUser = user;
+    isEditor = false;
+
+    if (user) {
+      // Checking ONLY this user's own document - the security rules
+      // block reading anyone else's, or listing the collection, so this
+      // is safe to do straight from the browser.
+      const editorDoc = await getDoc(doc(db, 'authorizedEditors', user.email));
+      isEditor = editorDoc.exists();
+    }
+
+    renderAuthWidget();
+    // Re-draw the currently visible table so it switches between
+    // editable dropdowns and read-only pills immediately, without
+    // needing a page refresh or tab switch.
+    if (activeSlug) renderMainTable();
+  });
+
 
   // ===================== LOAD CONFIG, THEN BUILD TABS =====================
   async function init() {
@@ -620,6 +738,20 @@
         }
 
         const currentValue = statuses[sb] || "";
+
+        if (!isEditor) {
+          // Read-only view: a plain, non-interactive pill. This is what
+          // every visitor sees by default, and what non-approved signed-in
+          // users see too - only approved editors get the real dropdown.
+          const pill = document.createElement('span');
+          pill.className = 'status-pill-readonly';
+          pill.style.backgroundColor = optionColor(currentValue);
+          pill.textContent = currentValue === "" ? "-- Not set --" : currentValue;
+          td.innerHTML = '';
+          td.appendChild(pill);
+          return;
+        }
+
         const select = document.createElement('select');
         select.className = statusClass(currentValue);
         STATUS_OPTIONS.forEach(opt => {
@@ -756,6 +888,11 @@
 
   // ===================== SEED ALL KINGDOMS =====================
   document.getElementById('seedBtn').addEventListener('click', async () => {
+    if (!isEditor) {
+      setStatusLine("Only approved editors can seed data. Sign in with an authorized email first.", "error");
+      return;
+    }
+
     const confirmed = confirm(
       "This writes the ORIGINAL spreadsheet snapshot into Firestore, " +
       "overwriting anything changed since the first time this was clicked. " +
@@ -768,15 +905,19 @@
     const seedData = await res.json(); // { slug: { subarea: { skybox: status } } }
 
     let written = 0;
-    for (const kingdom of KINGDOMS) {
-      const kingdomData = seedData[kingdom.slug];
-      for (const subarea of kingdom.subareas) {
-        await setDoc(doc(db, kingdom.slug, subarea), { statuses: kingdomData[subarea] });
-        written++;
-        setStatusLine(`Seeding... ${written} subareas written so far.`, "");
+    try {
+      for (const kingdom of KINGDOMS) {
+        const kingdomData = seedData[kingdom.slug];
+        for (const subarea of kingdom.subareas) {
+          await setDoc(doc(db, kingdom.slug, subarea), { statuses: kingdomData[subarea] });
+          written++;
+          setStatusLine(`Seeding... ${written} subareas written so far.`, "");
+        }
       }
+      setStatusLine(`Done - seeded ${written} subareas across ${KINGDOMS.length} Kingdoms.`, "connected");
+    } catch (err) {
+      setStatusLine(`Seeding stopped after ${written} subareas - ${err.message}`, "error");
     }
-    setStatusLine(`Done - seeded ${written} subareas across ${KINGDOMS.length} Kingdoms.`, "connected");
   });
 
   // ===================== WHEEL-TO-SCROLL-SIDEWAYS =====================
