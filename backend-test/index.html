@@ -297,24 +297,52 @@
     border-color: #5865F2; /* replaces the browser's default focus ring, which also looked out of place */
   }
 
+  /* The status pill in each main-table cell is a <button> that opens our
+     own dropdown panel (below), not a native <select> - a browser's open
+     <select> list is OS-rendered chrome we can't restyle (the "Windows 7"
+     look), so this is the only way to keep the app's rounded dark theme
+     once the list is actually open. */
+  .status-trigger {
+    appearance: none;
+    border: none;
+    background-color: #2b2d31;
+    color: #fff;
+    border-radius: 7px;
+    padding: 4px 26px 4px 10px;
+    font-size: 12px;
+    font-weight: 600;
+    font-family: inherit;
+    text-align: left;
+    cursor: pointer;
+    outline: none;
+
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%23ffffff' stroke-width='2'%3E%3Cpath d='M6 8l4 4 4-4'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    background-size: 14px;
+  }
+
+  .status-trigger:hover { filter: brightness(1.08); }
+  .status-trigger:focus-visible { outline: 2px solid #5865F2; outline-offset: 1px; }
+
   /* One color per status, spread around the hue wheel instead of the old
      4-bucket good/bad/warn/neutral grouping - "Looks Bad" and "Lags
      Kingdom" used to render as the same red, and all 3 "Good but X"
      caveats used to render as the same yellow, which made them hard to
      tell apart at a glance. */
-  select.status-good, .status-pill-readonly.status-good { background-color: #15803d; border-color: #15803d; }
-  select.status-avoid, .status-pill-readonly.status-avoid { background-color: #c2410c; border-color: #c2410c; }
-  select.status-lags, .status-pill-readonly.status-lags { background-color: #b91c1c; border-color: #b91c1c; }
-  select.status-dark, .status-pill-readonly.status-dark { background-color: #6d28d9; border-color: #6d28d9; }
-  select.status-bright, .status-pill-readonly.status-bright { background-color: #92720a; border-color: #92720a; }
-  select.status-foggy, .status-pill-readonly.status-foggy { background-color: #0e7490; border-color: #0e7490; }
-  select.status-uncertain, .status-pill-readonly.status-uncertain { background-color: #e5e7eb; border-color: #e5e7eb; color: #18181b; }
+  .status-trigger.status-good, .status-pill-readonly.status-good { background-color: #15803d; }
+  .status-trigger.status-avoid, .status-pill-readonly.status-avoid { background-color: #c2410c; }
+  .status-trigger.status-lags, .status-pill-readonly.status-lags { background-color: #b91c1c; }
+  .status-trigger.status-dark, .status-pill-readonly.status-dark { background-color: #6d28d9; }
+  .status-trigger.status-bright, .status-pill-readonly.status-bright { background-color: #92720a; }
+  .status-trigger.status-foggy, .status-pill-readonly.status-foggy { background-color: #0e7490; }
+  .status-trigger.status-uncertain, .status-pill-readonly.status-uncertain { background-color: #e5e7eb; color: #18181b; }
   /* Uncertain's pale background needs a dark dropdown arrow instead of
      the shared white one, or it'd be invisible against it. */
-  select.status-uncertain { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%2318181b' stroke-width='2'%3E%3Cpath d='M6 8l4 4 4-4'/%3E%3C/svg%3E"); }
-  select.status-neutral, .status-pill-readonly.status-neutral { background-color: #2b2d31; }
+  .status-trigger.status-uncertain { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%2318181b' stroke-width='2'%3E%3Cpath d='M6 8l4 4 4-4'/%3E%3C/svg%3E"); }
+  .status-trigger.status-neutral, .status-pill-readonly.status-neutral { background-color: #2b2d31; }
 
-  /* Read-only version of the same pill, shown instead of a <select> to
+  /* Read-only version of the same pill, shown instead of a button to
      anyone who isn't signed in as an approved editor. Same look, but a
      plain span - nothing to click, nothing to change. */
   .status-pill-readonly {
@@ -326,6 +354,43 @@
     color: #fff;
     cursor: default;
   }
+
+  /* The custom dropdown panel a .status-trigger opens - one shared
+     element reused for whichever cell is active, positioned next to
+     that cell's trigger button. */
+  .status-dropdown-panel {
+    position: fixed;
+    display: none;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 170px;
+    max-height: 280px;
+    overflow-y: auto;
+    background-color: #1c1d21;
+    border: 1px solid #2f3036;
+    border-radius: 10px;
+    box-shadow: 0 14px 34px rgba(0,0,0,0.55);
+    padding: 6px;
+    z-index: 1000;
+  }
+
+  .status-dropdown-panel.open { display: flex; }
+
+  .status-dropdown-panel::-webkit-scrollbar { width: 8px; }
+  .status-dropdown-panel::-webkit-scrollbar-track { background: #1a1a1a; }
+  .status-dropdown-panel::-webkit-scrollbar-thumb { background-color: #3d3d3d; border-radius: 4px; }
+
+  .status-dropdown-option {
+    padding: 8px 12px;
+    border-radius: 7px;
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  .status-dropdown-option:hover { filter: brightness(1.15); }
+  .status-dropdown-option.selected { box-shadow: inset 0 0 0 2px rgba(255,255,255,0.65); }
 
   /* ===================== SUMMARY / ISSUES SECTION ===================== */
   .summary-header {
@@ -494,6 +559,8 @@
        is comfortable for a mouse but too cramped for a thumb. */
     button, .tab-btn { min-height: 42px; padding: 10px 16px; }
     select { min-height: 36px; padding-top: 8px; padding-bottom: 8px; }
+    /* .status-trigger is a <button>, so it already gets the 42px touch
+       target from the generic button rule above - no override needed. */
     button, select, input, .tab-btn { touch-action: manipulation; }
 
     .tab-bar { gap: 8px; margin-bottom: 10px; }
@@ -671,6 +738,80 @@
   function optionTextColor(value) {
     return value === "Uncertain" ? "#18181b" : "#ffffff";
   }
+
+  // ===================== CUSTOM STATUS DROPDOWN =====================
+  // One shared popup element, repositioned next to whichever cell's
+  // .status-trigger button was clicked, instead of a <select> per cell -
+  // this is what lets the OPEN list match the app's rounded dark theme
+  // rather than falling back to the browser/OS's native list chrome.
+  let dropdownPanel = null;
+  let activeDropdownTrigger = null;
+
+  function getDropdownPanel() {
+    if (dropdownPanel) return dropdownPanel;
+    dropdownPanel = document.createElement('div');
+    dropdownPanel.className = 'status-dropdown-panel';
+    document.body.appendChild(dropdownPanel);
+    return dropdownPanel;
+  }
+
+  function closeStatusDropdown() {
+    if (!dropdownPanel) return;
+    dropdownPanel.classList.remove('open');
+    activeDropdownTrigger = null;
+  }
+
+  function openStatusDropdown(trigger, currentValue, onSelect) {
+    const panel = getDropdownPanel();
+
+    // Clicking the already-open trigger again just closes it.
+    if (activeDropdownTrigger === trigger) {
+      closeStatusDropdown();
+      return;
+    }
+
+    panel.innerHTML = '';
+    STATUS_OPTIONS.forEach(opt => {
+      const row = document.createElement('div');
+      row.className = 'status-dropdown-option' + (opt === currentValue ? ' selected' : '');
+      row.textContent = opt === "" ? "-- Select --" : opt;
+      row.style.backgroundColor = optionColor(opt);
+      row.style.color = optionTextColor(opt);
+      row.addEventListener('click', () => {
+        closeStatusDropdown();
+        onSelect(opt);
+      });
+      panel.appendChild(row);
+    });
+
+    const rect = trigger.getBoundingClientRect();
+    panel.style.minWidth = Math.max(170, Math.round(rect.width)) + 'px';
+    panel.style.left = Math.round(rect.left) + 'px';
+    panel.style.top = Math.round(rect.bottom + 6) + 'px';
+    panel.classList.add('open');
+    activeDropdownTrigger = trigger;
+
+    // Flip upward instead of running off the bottom of the viewport.
+    const panelHeight = panel.offsetHeight;
+    if (rect.bottom + 6 + panelHeight > window.innerHeight) {
+      panel.style.top = Math.max(6, Math.round(rect.top - panelHeight - 6)) + 'px';
+    }
+  }
+
+  // Outside click / Escape / scroll all close the panel - a stale
+  // position (e.g. after scrolling the table sideways) would otherwise
+  // point at the wrong cell.
+  document.addEventListener('click', (e) => {
+    if (!dropdownPanel || !dropdownPanel.classList.contains('open')) return;
+    if (dropdownPanel.contains(e.target)) return;
+    if (activeDropdownTrigger && activeDropdownTrigger.contains(e.target)) return;
+    closeStatusDropdown();
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeStatusDropdown();
+  });
+  window.addEventListener('scroll', closeStatusDropdown, true);
+  window.addEventListener('resize', closeStatusDropdown);
 
   function statusTextClass(value) {
     if (value === "Good to Use") return "status-text-good";
@@ -890,31 +1031,29 @@
           return;
         }
 
-        const select = document.createElement('select');
-        select.className = statusClass(currentValue);
-        STATUS_OPTIONS.forEach(opt => {
-          const option = document.createElement('option');
-          option.value = opt;
-          option.textContent = opt === "" ? "-- Select --" : opt;
-          if (opt === currentValue) option.selected = true;
-          option.style.backgroundColor = optionColor(opt); // colors the OPEN dropdown list, not just the closed pill
-          option.style.color = optionTextColor(opt);
-          select.appendChild(option);
-        });
+        const trigger = document.createElement('button');
+        trigger.type = 'button';
+        trigger.className = 'status-trigger ' + statusClass(currentValue);
+        trigger.textContent = currentValue === "" ? "-- Select --" : currentValue;
+        trigger.dataset.value = currentValue;
 
-        select.addEventListener('change', async () => {
-          const newValue = select.value;
-          select.className = statusClass(newValue);
-          try {
-            await setDoc(doc(db, activeSlug, subarea), { statuses: { [sb]: newValue } }, { merge: true });
-            setStatusLine(`Saved "${sb}" for ${subarea}.`, "connected");
-          } catch (err) {
-            setStatusLine("Error saving: " + err.message, "error");
-          }
+        trigger.addEventListener('click', (e) => {
+          e.stopPropagation();
+          openStatusDropdown(trigger, trigger.dataset.value, async (newValue) => {
+            trigger.dataset.value = newValue;
+            trigger.textContent = newValue === "" ? "-- Select --" : newValue;
+            trigger.className = 'status-trigger ' + statusClass(newValue);
+            try {
+              await setDoc(doc(db, activeSlug, subarea), { statuses: { [sb]: newValue } }, { merge: true });
+              setStatusLine(`Saved "${sb}" for ${subarea}.`, "connected");
+            } catch (err) {
+              setStatusLine("Error saving: " + err.message, "error");
+            }
+          });
         });
 
         td.innerHTML = '';
-        td.appendChild(select);
+        td.appendChild(trigger);
       });
     });
   }
