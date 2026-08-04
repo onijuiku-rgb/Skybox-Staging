@@ -297,10 +297,22 @@
     border-color: #5865F2; /* replaces the browser's default focus ring, which also looked out of place */
   }
 
-  select.status-good { background-color: #1c5c34; border-color: #1c5c34; }
-  select.status-bad { background-color: #5c1c1c; border-color: #5c1c1c; }
-  select.status-warn { background-color: #5c4a1c; border-color: #5c4a1c; }
-  select.status-neutral { background-color: #2b2d31; }
+  /* One color per status, spread around the hue wheel instead of the old
+     4-bucket good/bad/warn/neutral grouping - "Looks Bad" and "Lags
+     Kingdom" used to render as the same red, and all 3 "Good but X"
+     caveats used to render as the same yellow, which made them hard to
+     tell apart at a glance. */
+  select.status-good, .status-pill-readonly.status-good { background-color: #15803d; border-color: #15803d; }
+  select.status-avoid, .status-pill-readonly.status-avoid { background-color: #c2410c; border-color: #c2410c; }
+  select.status-lags, .status-pill-readonly.status-lags { background-color: #b91c1c; border-color: #b91c1c; }
+  select.status-dark, .status-pill-readonly.status-dark { background-color: #6d28d9; border-color: #6d28d9; }
+  select.status-bright, .status-pill-readonly.status-bright { background-color: #92720a; border-color: #92720a; }
+  select.status-foggy, .status-pill-readonly.status-foggy { background-color: #0e7490; border-color: #0e7490; }
+  select.status-uncertain, .status-pill-readonly.status-uncertain { background-color: #e5e7eb; border-color: #e5e7eb; color: #18181b; }
+  /* Uncertain's pale background needs a dark dropdown arrow instead of
+     the shared white one, or it'd be invisible against it. */
+  select.status-uncertain { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%2318181b' stroke-width='2'%3E%3Cpath d='M6 8l4 4 4-4'/%3E%3C/svg%3E"); }
+  select.status-neutral, .status-pill-readonly.status-neutral { background-color: #2b2d31; }
 
   /* Read-only version of the same pill, shown instead of a <select> to
      anyone who isn't signed in as an approved editor. Same look, but a
@@ -418,8 +430,13 @@
   .summary-table th:nth-child(2), .summary-table td:nth-child(2) { width: 40%; }
   .summary-table th:nth-child(3), .summary-table td:nth-child(3) { width: 32%; }
 
-  .summary-table .status-text-bad { color: #f87171; font-weight: 600; }
-  .summary-table .status-text-warn { color: #fbe38e; font-weight: 600; }
+  .summary-table .status-text-good { color: #4ade80; font-weight: 600; }
+  .summary-table .status-text-avoid { color: #fb923c; font-weight: 600; }
+  .summary-table .status-text-lags { color: #f87171; font-weight: 600; }
+  .summary-table .status-text-dark { color: #c4b5fd; font-weight: 600; }
+  .summary-table .status-text-bright { color: #fbe38e; font-weight: 600; }
+  .summary-table .status-text-foggy { color: #67e8f9; font-weight: 600; }
+  .summary-table .status-text-uncertain { color: #f4f4f5; font-weight: 700; }
   .summary-table .status-text-neutral { color: #999; font-style: italic; }
 
   #emptySummary {
@@ -616,34 +633,53 @@
     "Uncertain"
   ];
 
+  // Each status gets its own class/color (not grouped into good/bad/warn
+  // buckets) so e.g. "Looks Bad" and "Lags Kingdom" - or the three
+  // "Good but X" caveats - don't render as the same shade as each other.
   function statusClass(value) {
     if (value === "Good to Use") return "status-good";
-    if (value === "Looks Bad - Don't Use" || value === "Lags Kingdom") return "status-bad";
-    if (value && value !== "") return "status-warn";
+    if (value === "Looks Bad - Don't Use") return "status-avoid";
+    if (value === "Lags Kingdom") return "status-lags";
+    if (value === "Good but Dark") return "status-dark";
+    if (value === "Good but Bright") return "status-bright";
+    if (value === "Good but Foggy") return "status-foggy";
+    if (value === "Uncertain") return "status-uncertain";
     return "status-neutral";
   }
 
-  // One distinct color per status, used to color each individual OPTION
-  // inside the open dropdown list (statusClass above only sorts things
-  // into 4 buckets for the closed pill - this gives every status its own
-  // shade so they're visually distinguishable while the list is open).
+  // Same palette as the select.status-* / .status-pill-readonly.status-*
+  // CSS rules, kept here as inline styles because <option> background
+  // colors don't reliably respond to CSS classes across browsers - this
+  // colors each OPTION inside the open dropdown list to match its closed-
+  // pill color.
   function optionColor(value) {
     const colors = {
       "": "#2b2d31",
-      "Good to Use": "#1c5c34",
-      "Looks Bad - Don't Use": "#5c1c1c",
-      "Lags Kingdom": "#6b2c1c",
-      "Good but Dark": "#1c3a5c",
-      "Good but Bright": "#5c4a1c",
-      "Good but Foggy": "#3a4a5c",
-      "Uncertain": "#4a1c5c"
+      "Good to Use": "#15803d",
+      "Looks Bad - Don't Use": "#c2410c",
+      "Lags Kingdom": "#b91c1c",
+      "Good but Dark": "#6d28d9",
+      "Good but Bright": "#92720a",
+      "Good but Foggy": "#0e7490",
+      "Uncertain": "#e5e7eb"
     };
     return colors[value] || "#2b2d31";
   }
 
+  // Uncertain's option background is near-white, so it needs dark text -
+  // every other status keeps the white text the dropdown otherwise uses.
+  function optionTextColor(value) {
+    return value === "Uncertain" ? "#18181b" : "#ffffff";
+  }
+
   function statusTextClass(value) {
-    if (value === "Looks Bad - Don't Use" || value === "Lags Kingdom") return "status-text-bad";
-    if (value && value !== "" && value !== "Good to Use") return "status-text-warn";
+    if (value === "Good to Use") return "status-text-good";
+    if (value === "Looks Bad - Don't Use") return "status-text-avoid";
+    if (value === "Lags Kingdom") return "status-text-lags";
+    if (value === "Good but Dark") return "status-text-dark";
+    if (value === "Good but Bright") return "status-text-bright";
+    if (value === "Good but Foggy") return "status-text-foggy";
+    if (value === "Uncertain") return "status-text-uncertain";
     return "status-text-neutral";
   }
 
@@ -847,8 +883,7 @@
           // every visitor sees by default, and what non-approved signed-in
           // users see too - only approved editors get the real dropdown.
           const pill = document.createElement('span');
-          pill.className = 'status-pill-readonly';
-          pill.style.backgroundColor = optionColor(currentValue);
+          pill.className = 'status-pill-readonly ' + statusClass(currentValue);
           pill.textContent = currentValue === "" ? "-- Not set --" : currentValue;
           td.innerHTML = '';
           td.appendChild(pill);
@@ -863,7 +898,7 @@
           option.textContent = opt === "" ? "-- Select --" : opt;
           if (opt === currentValue) option.selected = true;
           option.style.backgroundColor = optionColor(opt); // colors the OPEN dropdown list, not just the closed pill
-          option.style.color = '#ffffff';
+          option.style.color = optionTextColor(opt);
           select.appendChild(option);
         });
 
