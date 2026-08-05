@@ -239,6 +239,56 @@
   .guide-card-bad { border-left-color: #b91c1c; }
   .guide-card-bad h3 { color: #ff8080; }
 
+  /* ===================== RANDOMIZER (admins only) ===================== */
+  .tab-btn.randomizer-tab-btn.active {
+    background-color: #b45309;
+    border-color: #b45309;
+  }
+
+  .randomizer-panel {
+    max-width: 1200px;
+    margin: 0 auto 24px;
+  }
+
+  .randomizer-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+    font-size: 12.5px;
+    color: #aaa;
+  }
+
+  .randomizer-live-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: #189844;
+    box-shadow: 0 0 6px #189844;
+    flex-shrink: 0;
+  }
+
+  #randomizerDownloadBtn {
+    margin-left: auto;
+    background-color: #137936;
+    color: #fff;
+    border: none;
+    padding: 8px 14px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 12.5px;
+    cursor: pointer;
+  }
+  #randomizerDownloadBtn:hover { background-color: #189844; }
+
+  #randomizerCanvas {
+    width: 100%;
+    height: auto;
+    display: block;
+    border-radius: 12px;
+    border: 1px solid #333;
+  }
+
   /* ===================== SKYBOX JUMP SEARCH ===================== */
   .jump-search-input {
     background-color: #1a1a1a;
@@ -700,6 +750,15 @@
   </div>
 </div>
 
+<div id="randomizerPanel" class="randomizer-panel" style="display:none;">
+  <div class="randomizer-toolbar">
+    <span class="randomizer-live-dot" id="randomizerLiveDot"></span>
+    <span id="randomizerLiveText">Live - updates automatically as statuses change</span>
+    <button id="randomizerDownloadBtn">&#8681; Download PNG</button>
+  </div>
+  <canvas id="randomizerCanvas"></canvas>
+</div>
+
 <div id="kingdomView">
   <div>
     <input type="text" class="jump-search-input" id="skyboxJumpInput" list="skyboxDatalist" placeholder="Jump to skybox column...">
@@ -912,6 +971,7 @@
   let KINGDOMS = [];   // [{ slug, label, subareas: [...] }, ...] - loaded from kingdoms-config.json
   let currentUser = null; // the signed-in Firebase Auth user object, or null if signed out
   let isEditor = false;   // true only if currentUser's email exists in the authorizedEditors collection
+  let isAdmin = false;    // stricter than isEditor - only the admins collection, gates the Randomizer panel
   let SKYBOXES = [];   // shared 136-name list, same order for every Kingdom
   let activeSlug = null;
   let activeLabel = '';
@@ -919,9 +979,12 @@
   let currentData = {};        // { subareaName: { skyboxName: status } } for the CURRENTLY ACTIVE kingdom only
   let unsubscribeSnapshot = null; // stops the previous Kingdom's live listener when switching tabs
   let viewingGuide = false; // true while the Guide tab (authorizedEditors/admins only) is showing
+  let viewingRandomizer = false; // true while the Randomizer tab (admins only) is showing
   let kingdomsLoaded = false;   // kingdoms-config.json has finished loading
   let authResolvedOnce = false; // Firebase has told us the sign-in state at least once
   let initialViewChosen = false; // the landing tab (Guide vs first Kingdom) has been picked
+  let kingdomLiveListeners = []; // unsubscribe fns for the 17 always-on Randomizer progress listeners
+  let kingdomProgressLive = {};  // { slug: { filled, total } }, kept live by those listeners
 
   // Filters (shared across all Kingdoms, not reset when switching tabs)
   let hiddenStatuses = new Set(["Good to Use"]); // "Good to Use" hidden by default - the summary table is meant to highlight problems, not everything
@@ -965,6 +1028,7 @@
   onAuthStateChanged(auth, async (user) => {
     currentUser = user;
     isEditor = false;
+    isAdmin = false;
 
     if (user) {
       // Checking ONLY this user's own documents - the security rules
@@ -977,19 +1041,25 @@
         getDoc(doc(db, 'admins', user.email))
       ]);
       isEditor = editorDoc.exists() || adminDoc.exists();
+      isAdmin = adminDoc.exists();
     }
 
     renderAuthWidget();
     // Re-draw the currently visible table so it switches between
     // editable dropdowns and read-only pills immediately, without
     // needing a page refresh or tab switch.
-    if (activeSlug && !viewingGuide) renderMainTable();
+    if (activeSlug && !viewingGuide && !viewingRandomizer) renderMainTable();
 
-    // Guide tab only exists for authorizedEditors/admins - rebuild the
-    // tab bar so it appears/disappears immediately on sign-in/out,
-    // and bail out of the Guide view if access was just lost.
+    // Guide tab only exists for authorizedEditors/admins, Randomizer only
+    // for admins - rebuild the tab bar so both appear/disappear immediately
+    // on sign-in/out, and bail out of either view if access was just lost.
     buildTabs();
     if (viewingGuide && !isEditor) switchKingdom(activeSlug || KINGDOMS[0].slug);
+    if (viewingRandomizer && !isAdmin) switchKingdom(activeSlug || KINGDOMS[0].slug);
+
+    // The 17 live progress listeners behind Randomizer are only worth
+    // paying for while someone with admin access is actually signed in.
+    setupKingdomLiveListeners();
 
     if (!authResolvedOnce) {
       // First time hearing from Firebase at all (either an already-signed-in
@@ -1005,6 +1075,35 @@
       showGuide();
     }
   });
+
+  // ===================== RANDOMIZER LIVE DATA (admins only) =====================
+  // Subscribes to all 17 Kingdom collections at once so the Randomizer
+  // graphic updates the moment any status changes anywhere, without
+  // needing the tab to be open when the change happens. Only running
+  // this for admins keeps it from costing reads for every visitor.
+  function teardownKingdomLiveListeners() {
+    kingdomLiveListeners.forEach(unsub => unsub());
+    kingdomLiveListeners = [];
+  }
+
+  function setupKingdomLiveListeners() {
+    teardownKingdomLiveListeners();
+    if (!isAdmin || !kingdomsLoaded) return;
+
+    KINGDOMS.forEach(k => {
+      const totalCells = k.subareas.length * SKYBOXES.length;
+      const unsub = onSnapshot(collection(db, k.slug), (snapshot) => {
+        let filled = 0;
+        snapshot.forEach(docSnap => {
+          const statuses = docSnap.data().statuses || {};
+          SKYBOXES.forEach(sb => { if ((statuses[sb] || "").trim() !== "") filled++; });
+        });
+        kingdomProgressLive[k.slug] = { filled, total: totalCells };
+        if (viewingRandomizer) drawRandomizerCanvas();
+      });
+      kingdomLiveListeners.push(unsub);
+    });
+  }
 
   // Picks the landing tab exactly once, as soon as both the Kingdom list
   // and the initial auth check are ready: Guide for a signed-in
@@ -1031,6 +1130,7 @@
     buildTabs();
     populateSkyboxDatalist();
     maybeChooseInitialView();
+    setupKingdomLiveListeners(); // no-op unless auth already resolved to an admin
   }
 
   function populateSkyboxDatalist() {
@@ -1057,6 +1157,15 @@
       tabBar.appendChild(guideBtn);
     }
 
+    // Randomizer is stricter than Guide - admins only, not every editor.
+    if (isAdmin) {
+      const randomizerBtn = document.createElement('button');
+      randomizerBtn.className = 'tab-btn randomizer-tab-btn';
+      randomizerBtn.textContent = 'Randomizer';
+      randomizerBtn.addEventListener('click', showRandomizer);
+      tabBar.appendChild(randomizerBtn);
+    }
+
     KINGDOMS.forEach(k => {
       const btn = document.createElement('button');
       btn.className = 'tab-btn';
@@ -1073,8 +1182,10 @@
     document.querySelectorAll('.tab-btn').forEach(btn => {
       if (btn.classList.contains('guide-tab-btn')) {
         btn.classList.toggle('active', viewingGuide);
+      } else if (btn.classList.contains('randomizer-tab-btn')) {
+        btn.classList.toggle('active', viewingRandomizer);
       } else {
-        btn.classList.toggle('active', !viewingGuide && btn.dataset.slug === activeSlug);
+        btn.classList.toggle('active', !viewingGuide && !viewingRandomizer && btn.dataset.slug === activeSlug);
       }
     });
   }
@@ -1083,10 +1194,344 @@
   function showGuide() {
     if (!isEditor) return; // defensive - the tab shouldn't exist otherwise
     viewingGuide = true;
+    viewingRandomizer = false;
     document.getElementById('kingdomView').style.display = 'none';
+    document.getElementById('randomizerPanel').style.display = 'none';
     document.getElementById('guidePanel').style.display = 'block';
     setActiveTabStyling();
   }
+
+  // ===================== RANDOMIZER (admins only) =====================
+  function showRandomizer() {
+    if (!isAdmin) return; // defensive - the tab shouldn't exist otherwise
+    viewingRandomizer = true;
+    viewingGuide = false;
+    document.getElementById('kingdomView').style.display = 'none';
+    document.getElementById('guidePanel').style.display = 'none';
+    document.getElementById('randomizerPanel').style.display = 'block';
+    setActiveTabStyling();
+    drawRandomizerCanvas();
+  }
+
+  // One tile per Kingdom, in display order - Dark Side and Darker Side
+  // share a single tile (two slugs, "X%/Y%") matching the original graphic.
+  const KINGDOM_TILES = [
+    { slugs: ['capKingdom'], label: 'Cap', icon: 'hat', color: '#eab308' },
+    { slugs: ['cascadeKingdom'], label: 'Cascade', icon: 'ring', color: '#f97316' },
+    { slugs: ['sandKingdom'], label: 'Sand', icon: 'triangle', color: '#22c55e' },
+    { slugs: ['lakeKingdom'], label: 'Lake', icon: 'drop', color: '#ec4899' },
+    { slugs: ['woodedKingdom'], label: 'Wooded', icon: 'hexagon', color: '#3b82f6' },
+    { slugs: ['cloudKingdom'], label: 'Cloud', icon: 'cloud', color: '#60a5fa' },
+    { slugs: ['lostKingdom'], label: 'Lost', icon: 'leaf', color: '#d946ef' },
+    { slugs: ['metroKingdom'], label: 'Metro', icon: 'person', color: '#c2703d' },
+    { slugs: ['snowKingdom'], label: 'Snow', icon: 'snowflake', color: '#d97706' },
+    { slugs: ['seasideKingdom'], label: 'Seaside', icon: 'shell', color: '#8b5cf6' },
+    { slugs: ['luncheonKingdom'], label: 'Luncheon', icon: 'blob', color: '#14b8a6' },
+    { slugs: ['ruinedKingdom'], label: 'Ruined', icon: 'dragon', color: '#f43f5e' },
+    { slugs: ['bowsersKingdom'], label: "Bowser's", icon: 'spiky', color: '#dc2626' },
+    { slugs: ['moonKingdom'], label: 'Moon', icon: 'moon', color: '#9ca3af' },
+    { slugs: ['darkSide', 'darkerSide'], label: 'Dark/Darker', icon: 'star', color: '#fde68a' },
+    { slugs: ['mushroomKingdom'], label: 'Mushroom', icon: 'star', color: '#facc15' }
+  ];
+
+  function pctFor(slug) {
+    const p = kingdomProgressLive[slug];
+    if (!p || p.total === 0) return null;
+    return (p.filled / p.total) * 100;
+  }
+
+  function fmtPct(p) {
+    if (p === null) return '0%'; // no live data yet - starts at 0% until the real listener reports in
+    return (p % 1 === 0 ? p : p.toFixed(2)) + '%';
+  }
+
+  // Draws one simple flat-style icon per Kingdom, sized/positioned around
+  // (cx, cy) with "radius" r - used both on-screen and in the downloaded
+  // PNG, since both come from the same canvas.
+  function drawKingdomIcon(ctx, type, cx, cy, r, color) {
+    ctx.save();
+    ctx.fillStyle = color;
+    ctx.strokeStyle = 'rgba(0,0,0,0.35)';
+    ctx.lineWidth = 2;
+
+    switch (type) {
+      case 'hat':
+        ctx.beginPath();
+        ctx.ellipse(cx, cy + r * 0.55, r * 0.85, r * 0.22, 0, 0, Math.PI * 2);
+        ctx.fill(); ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(cx - r * 0.35, cy + r * 0.55);
+        ctx.lineTo(cx - r * 0.28, cy - r * 0.55);
+        ctx.lineTo(cx + r * 0.28, cy - r * 0.55);
+        ctx.lineTo(cx + r * 0.35, cy + r * 0.55);
+        ctx.closePath();
+        ctx.fill(); ctx.stroke();
+        break;
+
+      case 'ring':
+        ctx.beginPath();
+        ctx.arc(cx, cy, r * 0.55, 0, Math.PI * 2);
+        ctx.lineWidth = r * 0.4;
+        ctx.strokeStyle = color;
+        ctx.stroke();
+        break;
+
+      case 'triangle':
+        ctx.beginPath();
+        ctx.moveTo(cx, cy - r * 0.65);
+        ctx.lineTo(cx + r * 0.6, cy + r * 0.5);
+        ctx.lineTo(cx - r * 0.6, cy + r * 0.5);
+        ctx.closePath();
+        ctx.lineWidth = r * 0.18;
+        ctx.strokeStyle = color;
+        ctx.stroke();
+        break;
+
+      case 'drop':
+        ctx.beginPath();
+        ctx.moveTo(cx, cy - r * 0.7);
+        ctx.quadraticCurveTo(cx + r * 0.6, cy + r * 0.1, cx, cy + r * 0.65);
+        ctx.quadraticCurveTo(cx - r * 0.6, cy + r * 0.1, cx, cy - r * 0.7);
+        ctx.closePath();
+        ctx.fill(); ctx.stroke();
+        break;
+
+      case 'hexagon':
+        ctx.beginPath();
+        for (let i = 0; i < 6; i++) {
+          const angle = Math.PI / 6 + i * Math.PI / 3;
+          const x = cx + r * 0.65 * Math.cos(angle);
+          const y = cy + r * 0.65 * Math.sin(angle);
+          if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        }
+        ctx.closePath();
+        ctx.lineWidth = r * 0.15;
+        ctx.strokeStyle = color;
+        ctx.stroke();
+        break;
+
+      case 'cloud':
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(cx - r * 0.28, cy + r * 0.05, r * 0.32, 0, Math.PI * 2);
+        ctx.arc(cx + r * 0.05, cy - r * 0.12, r * 0.38, 0, Math.PI * 2);
+        ctx.arc(cx + r * 0.4, cy + r * 0.05, r * 0.28, 0, Math.PI * 2);
+        ctx.rect(cx - r * 0.5, cy + r * 0.05, r * 1.0, r * 0.32);
+        ctx.fill();
+        break;
+
+      case 'leaf':
+        ctx.beginPath();
+        ctx.moveTo(cx - r * 0.5, cy + r * 0.5);
+        ctx.quadraticCurveTo(cx - r * 0.6, cy - r * 0.5, cx + r * 0.5, cy - r * 0.5);
+        ctx.quadraticCurveTo(cx + r * 0.4, cy + r * 0.4, cx - r * 0.5, cy + r * 0.5);
+        ctx.closePath();
+        ctx.fill(); ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(cx - r * 0.45, cy + r * 0.4);
+        ctx.lineTo(cx + r * 0.35, cy - r * 0.35);
+        ctx.strokeStyle = 'rgba(0,0,0,0.3)';
+        ctx.lineWidth = r * 0.08;
+        ctx.stroke();
+        break;
+
+      case 'person':
+        ctx.beginPath();
+        ctx.arc(cx, cy - r * 0.25, r * 0.32, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(cx, cy + r * 0.75, r * 0.55, Math.PI, 0);
+        ctx.fill();
+        break;
+
+      case 'snowflake':
+        ctx.strokeStyle = color;
+        ctx.lineWidth = r * 0.14;
+        ctx.lineCap = 'round';
+        for (let i = 0; i < 3; i++) {
+          const angle = i * Math.PI / 3;
+          ctx.beginPath();
+          ctx.moveTo(cx + r * 0.65 * Math.cos(angle), cy + r * 0.65 * Math.sin(angle));
+          ctx.lineTo(cx - r * 0.65 * Math.cos(angle), cy - r * 0.65 * Math.sin(angle));
+          ctx.stroke();
+        }
+        break;
+
+      case 'shell':
+        ctx.beginPath();
+        ctx.arc(cx, cy + r * 0.2, r * 0.6, Math.PI, 0);
+        ctx.closePath();
+        ctx.fill(); ctx.stroke();
+        ctx.strokeStyle = 'rgba(0,0,0,0.3)';
+        ctx.lineWidth = r * 0.06;
+        for (let i = -2; i <= 2; i++) {
+          ctx.beginPath();
+          ctx.moveTo(cx, cy + r * 0.2);
+          ctx.lineTo(cx + i * r * 0.22, cy - r * 0.35);
+          ctx.stroke();
+        }
+        break;
+
+      case 'blob':
+        ctx.beginPath();
+        for (let i = 0; i <= 8; i++) {
+          const angle = i * Math.PI / 4;
+          const wob = 0.55 + (i % 2 === 0 ? 0.1 : -0.05);
+          const x = cx + r * wob * Math.cos(angle);
+          const y = cy + r * wob * Math.sin(angle);
+          if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        }
+        ctx.closePath();
+        ctx.fill(); ctx.stroke();
+        break;
+
+      case 'dragon':
+        ctx.beginPath();
+        ctx.moveTo(cx - r * 0.5, cy + r * 0.5);
+        ctx.quadraticCurveTo(cx - r * 0.6, cy - r * 0.3, cx, cy - r * 0.6);
+        ctx.quadraticCurveTo(cx + r * 0.5, cy - r * 0.7, cx + r * 0.35, cy - r * 0.1);
+        ctx.quadraticCurveTo(cx + r * 0.55, cy + r * 0.1, cx + r * 0.2, cy + r * 0.3);
+        ctx.quadraticCurveTo(cx, cy + r * 0.15, cx - r * 0.5, cy + r * 0.5);
+        ctx.closePath();
+        ctx.fill(); ctx.stroke();
+        break;
+
+      case 'spiky': {
+        ctx.beginPath();
+        const spikes = 8;
+        for (let i = 0; i < spikes * 2; i++) {
+          const angle = (Math.PI / spikes) * i;
+          const rad = i % 2 === 0 ? r * 0.65 : r * 0.4;
+          const x = cx + rad * Math.cos(angle);
+          const y = cy + rad * Math.sin(angle);
+          if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        }
+        ctx.closePath();
+        ctx.fill(); ctx.stroke();
+        break;
+      }
+
+      case 'moon':
+        // Crescent drawn as a single lune path (outer arc + reversed inner
+        // arc), not a composite erase - erasing punches a transparent hole
+        // that shows whatever is behind the canvas element instead of a
+        // clean cutout.
+        ctx.beginPath();
+        ctx.arc(cx, cy, r * 0.62, Math.PI * 0.5, Math.PI * 1.5, false);
+        ctx.arc(cx + r * 0.32, cy, r * 0.5, Math.PI * 1.5, Math.PI * 0.5, true);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+        break;
+
+      case 'star': {
+        ctx.beginPath();
+        const spikes = 5, outerR = r * 0.65, innerR = r * 0.28;
+        for (let i = 0; i < spikes * 2; i++) {
+          const angle = (Math.PI / spikes) * i - Math.PI / 2;
+          const rad = i % 2 === 0 ? outerR : innerR;
+          const x = cx + rad * Math.cos(angle);
+          const y = cy + rad * Math.sin(angle);
+          if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        }
+        ctx.closePath();
+        ctx.fill(); ctx.stroke();
+        break;
+      }
+    }
+    ctx.restore();
+  }
+
+  // Redraws the whole graphic from kingdomProgressLive - called whenever
+  // any of the 17 live listeners fire while this tab is open, and once
+  // right when the tab is opened.
+  function drawRandomizerCanvas() {
+    const canvas = document.getElementById('randomizerCanvas');
+    if (!canvas) return;
+
+    const baseW = 1200, baseH = 400;
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = baseW * dpr;
+    canvas.height = baseH * dpr;
+    canvas.style.aspectRatio = `${baseW} / ${baseH}`;
+
+    const ctx = canvas.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, baseW, baseH);
+
+    const grad = ctx.createLinearGradient(0, 0, 0, baseH);
+    grad.addColorStop(0, '#7f9be0');
+    grad.addColorStop(0.5, '#c98fc9');
+    grad.addColorStop(1, '#e8b98a');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, baseW, baseH);
+
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.lineJoin = 'round'; // thick stroked text + sharp letter corners (A/M/W/...) spikes badly with the default miter join
+    ctx.font = '900 40px -apple-system, "Segoe UI", Roboto, sans-serif';
+    ctx.lineWidth = 7;
+    ctx.strokeStyle = '#000';
+    ctx.fillStyle = '#fff';
+    ctx.strokeText('RANDOMIZER SKYBOX STATE', baseW / 2, 40);
+    ctx.fillText('RANDOMIZER SKYBOX STATE', baseW / 2, 40);
+
+    const cols = 8;
+    const colWidth = baseW / cols;
+    const rowTops = [78, 240];
+
+    KINGDOM_TILES.forEach((tile, i) => {
+      const col = i % cols;
+      const row = Math.floor(i / cols);
+      const cx = colWidth * col + colWidth / 2;
+      const rowTop = rowTops[row];
+      const badgeCy = rowTop + 42;
+      const r = 34;
+
+      ctx.beginPath();
+      ctx.arc(cx, badgeCy, r, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(255,255,255,0.15)';
+      ctx.fill();
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = 'rgba(0,0,0,0.55)';
+      ctx.stroke();
+
+      drawKingdomIcon(ctx, tile.icon, cx, badgeCy, r * 0.85, tile.color);
+
+      ctx.font = '800 15px -apple-system, "Segoe UI", Roboto, sans-serif';
+      ctx.lineWidth = 3.5;
+      ctx.strokeStyle = '#000';
+      ctx.fillStyle = '#fff';
+      const nameY = rowTop + 96;
+      ctx.strokeText(tile.label, cx, nameY);
+      ctx.fillText(tile.label, cx, nameY);
+
+      const pctText = tile.slugs.length === 2
+        ? `${fmtPct(pctFor(tile.slugs[0]))}/${fmtPct(pctFor(tile.slugs[1]))}`
+        : fmtPct(pctFor(tile.slugs[0]));
+
+      ctx.font = '900 21px -apple-system, "Segoe UI", Roboto, sans-serif';
+      ctx.lineWidth = 4;
+      const pctY = rowTop + 128;
+      ctx.strokeText(pctText, cx, pctY);
+      ctx.fillText(pctText, cx, pctY);
+    });
+  }
+
+  document.getElementById('randomizerDownloadBtn').addEventListener('click', () => {
+    if (!isAdmin) return; // defensive - the button is unreachable in the DOM otherwise
+    const canvas = document.getElementById('randomizerCanvas');
+    canvas.toBlob((blob) => {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `randomizer-skybox-state-${new Date().toISOString().slice(0, 10)}.png`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }, 'image/png');
+  });
 
   // ===================== SWITCHING KINGDOMS =====================
   function switchKingdom(slug) {
@@ -1094,7 +1539,9 @@
     if (!kingdom) return;
 
     viewingGuide = false;
+    viewingRandomizer = false;
     document.getElementById('guidePanel').style.display = 'none';
+    document.getElementById('randomizerPanel').style.display = 'none';
     document.getElementById('kingdomView').style.display = '';
 
     activeSlug = slug;
