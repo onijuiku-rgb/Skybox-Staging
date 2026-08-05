@@ -1215,23 +1215,26 @@
 
   // One tile per Kingdom, in display order - Dark Side and Darker Side
   // share a single tile (two slugs, "X%/Y%") matching the original graphic.
+  // Icon files + badge colors extracted directly from the user's own
+  // "Randomizer Skybox State Graphic" Slides deck (SVG export) - real
+  // artwork, not approximated shapes.
   const KINGDOM_TILES = [
-    { slugs: ['capKingdom'], label: 'Cap', icon: 'hat', color: '#eab308' },
-    { slugs: ['cascadeKingdom'], label: 'Cascade', icon: 'ring', color: '#f97316' },
-    { slugs: ['sandKingdom'], label: 'Sand', icon: 'triangle', color: '#22c55e' },
-    { slugs: ['lakeKingdom'], label: 'Lake', icon: 'drop', color: '#ec4899' },
-    { slugs: ['woodedKingdom'], label: 'Wooded', icon: 'hexagon', color: '#3b82f6' },
-    { slugs: ['cloudKingdom'], label: 'Cloud', icon: 'cloud', color: '#60a5fa' },
-    { slugs: ['lostKingdom'], label: 'Lost', icon: 'leaf', color: '#d946ef' },
-    { slugs: ['metroKingdom'], label: 'Metro', icon: 'person', color: '#c2703d' },
-    { slugs: ['snowKingdom'], label: 'Snow', icon: 'snowflake', color: '#d97706' },
-    { slugs: ['seasideKingdom'], label: 'Seaside', icon: 'shell', color: '#8b5cf6' },
-    { slugs: ['luncheonKingdom'], label: 'Luncheon', icon: 'blob', color: '#14b8a6' },
-    { slugs: ['ruinedKingdom'], label: 'Ruined', icon: 'dragon', color: '#f43f5e' },
-    { slugs: ['bowsersKingdom'], label: "Bowser's", icon: 'spiky', color: '#dc2626' },
-    { slugs: ['moonKingdom'], label: 'Moon', icon: 'moon', color: '#9ca3af' },
-    { slugs: ['darkSide', 'darkerSide'], label: 'Dark/Darker', icon: 'star', color: '#fde68a' },
-    { slugs: ['mushroomKingdom'], label: 'Mushroom', icon: 'star', color: '#facc15' }
+    { slugs: ['capKingdom'], label: 'Cap', icon: 'cap.png', color: '#eab308' },
+    { slugs: ['cascadeKingdom'], label: 'Cascade', icon: 'cascade.png', color: '#f97316' },
+    { slugs: ['sandKingdom'], label: 'Sand', icon: 'sand.png', color: '#22c55e' },
+    { slugs: ['lakeKingdom'], label: 'Lake', icon: 'lake.png', color: '#ec4899' },
+    { slugs: ['woodedKingdom'], label: 'Wooded', icon: 'wooded.png', color: '#3b82f6' },
+    { slugs: ['cloudKingdom'], label: 'Cloud', icon: 'cloud.png', color: '#60a5fa' },
+    { slugs: ['lostKingdom'], label: 'Lost', icon: 'lost.png', color: '#d946ef' },
+    { slugs: ['metroKingdom'], label: 'Metro', icon: 'metro.png', color: '#c2703d' },
+    { slugs: ['snowKingdom'], label: 'Snow', icon: 'snow.png', color: '#d97706' },
+    { slugs: ['seasideKingdom'], label: 'Seaside', icon: 'seaside.png', color: '#8b5cf6' },
+    { slugs: ['luncheonKingdom'], label: 'Luncheon', icon: 'luncheon.png', color: '#14b8a6' },
+    { slugs: ['ruinedKingdom'], label: 'Ruined', icon: 'ruined.png', color: '#f43f5e' },
+    { slugs: ['bowsersKingdom'], label: "Bowser's", icon: 'bowsers.png', color: '#dc2626' },
+    { slugs: ['moonKingdom'], label: 'Moon', icon: 'moon.png', color: '#9ca3af' },
+    { slugs: ['darkSide', 'darkerSide'], label: 'Dark/Darker', icon: 'darkdarker.png', color: '#fde68a' },
+    { slugs: ['mushroomKingdom'], label: 'Mushroom', icon: 'mushroom.png', color: '#facc15' }
   ];
 
   function pctFor(slug) {
@@ -1245,201 +1248,29 @@
     return (p % 1 === 0 ? p : p.toFixed(2)) + '%';
   }
 
-  // Draws one simple flat-style icon per Kingdom, sized/positioned around
-  // (cx, cy) with "radius" r - used both on-screen and in the downloaded
-  // PNG, since both come from the same canvas.
-  function drawKingdomIcon(ctx, type, cx, cy, r, color) {
-    ctx.save();
-    ctx.fillStyle = color;
-    ctx.strokeStyle = 'rgba(0,0,0,0.35)';
-    ctx.lineWidth = 2;
+  // ===================== RANDOMIZER ASSETS =====================
+  // The background (sunset gradient + mountains) and all 16 icons are the
+  // user's actual art, pulled from their "Randomizer Skybox State Graphic"
+  // Slides deck (SVG export) - real images, not redrawn shapes.
+  let randomizerAssetsPromise = null;
+  const randomizerImages = {}; // 'background' | icon filename -> loaded Image
 
-    switch (type) {
-      case 'hat':
-        ctx.beginPath();
-        ctx.ellipse(cx, cy + r * 0.55, r * 0.85, r * 0.22, 0, 0, Math.PI * 2);
-        ctx.fill(); ctx.stroke();
-        ctx.beginPath();
-        ctx.moveTo(cx - r * 0.35, cy + r * 0.55);
-        ctx.lineTo(cx - r * 0.28, cy - r * 0.55);
-        ctx.lineTo(cx + r * 0.28, cy - r * 0.55);
-        ctx.lineTo(cx + r * 0.35, cy + r * 0.55);
-        ctx.closePath();
-        ctx.fill(); ctx.stroke();
-        break;
+  function loadImage(src) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = reject;
+      img.src = src;
+    });
+  }
 
-      case 'ring':
-        ctx.beginPath();
-        ctx.arc(cx, cy, r * 0.55, 0, Math.PI * 2);
-        ctx.lineWidth = r * 0.4;
-        ctx.strokeStyle = color;
-        ctx.stroke();
-        break;
-
-      case 'triangle':
-        ctx.beginPath();
-        ctx.moveTo(cx, cy - r * 0.65);
-        ctx.lineTo(cx + r * 0.6, cy + r * 0.5);
-        ctx.lineTo(cx - r * 0.6, cy + r * 0.5);
-        ctx.closePath();
-        ctx.lineWidth = r * 0.18;
-        ctx.strokeStyle = color;
-        ctx.stroke();
-        break;
-
-      case 'drop':
-        ctx.beginPath();
-        ctx.moveTo(cx, cy - r * 0.7);
-        ctx.quadraticCurveTo(cx + r * 0.6, cy + r * 0.1, cx, cy + r * 0.65);
-        ctx.quadraticCurveTo(cx - r * 0.6, cy + r * 0.1, cx, cy - r * 0.7);
-        ctx.closePath();
-        ctx.fill(); ctx.stroke();
-        break;
-
-      case 'hexagon':
-        ctx.beginPath();
-        for (let i = 0; i < 6; i++) {
-          const angle = Math.PI / 6 + i * Math.PI / 3;
-          const x = cx + r * 0.65 * Math.cos(angle);
-          const y = cy + r * 0.65 * Math.sin(angle);
-          if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-        }
-        ctx.closePath();
-        ctx.lineWidth = r * 0.15;
-        ctx.strokeStyle = color;
-        ctx.stroke();
-        break;
-
-      case 'cloud':
-        ctx.fillStyle = '#ffffff';
-        ctx.beginPath();
-        ctx.arc(cx - r * 0.28, cy + r * 0.05, r * 0.32, 0, Math.PI * 2);
-        ctx.arc(cx + r * 0.05, cy - r * 0.12, r * 0.38, 0, Math.PI * 2);
-        ctx.arc(cx + r * 0.4, cy + r * 0.05, r * 0.28, 0, Math.PI * 2);
-        ctx.rect(cx - r * 0.5, cy + r * 0.05, r * 1.0, r * 0.32);
-        ctx.fill();
-        break;
-
-      case 'leaf':
-        ctx.beginPath();
-        ctx.moveTo(cx - r * 0.5, cy + r * 0.5);
-        ctx.quadraticCurveTo(cx - r * 0.6, cy - r * 0.5, cx + r * 0.5, cy - r * 0.5);
-        ctx.quadraticCurveTo(cx + r * 0.4, cy + r * 0.4, cx - r * 0.5, cy + r * 0.5);
-        ctx.closePath();
-        ctx.fill(); ctx.stroke();
-        ctx.beginPath();
-        ctx.moveTo(cx - r * 0.45, cy + r * 0.4);
-        ctx.lineTo(cx + r * 0.35, cy - r * 0.35);
-        ctx.strokeStyle = 'rgba(0,0,0,0.3)';
-        ctx.lineWidth = r * 0.08;
-        ctx.stroke();
-        break;
-
-      case 'person':
-        ctx.beginPath();
-        ctx.arc(cx, cy - r * 0.25, r * 0.32, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.beginPath();
-        ctx.arc(cx, cy + r * 0.75, r * 0.55, Math.PI, 0);
-        ctx.fill();
-        break;
-
-      case 'snowflake':
-        ctx.strokeStyle = color;
-        ctx.lineWidth = r * 0.14;
-        ctx.lineCap = 'round';
-        for (let i = 0; i < 3; i++) {
-          const angle = i * Math.PI / 3;
-          ctx.beginPath();
-          ctx.moveTo(cx + r * 0.65 * Math.cos(angle), cy + r * 0.65 * Math.sin(angle));
-          ctx.lineTo(cx - r * 0.65 * Math.cos(angle), cy - r * 0.65 * Math.sin(angle));
-          ctx.stroke();
-        }
-        break;
-
-      case 'shell':
-        ctx.beginPath();
-        ctx.arc(cx, cy + r * 0.2, r * 0.6, Math.PI, 0);
-        ctx.closePath();
-        ctx.fill(); ctx.stroke();
-        ctx.strokeStyle = 'rgba(0,0,0,0.3)';
-        ctx.lineWidth = r * 0.06;
-        for (let i = -2; i <= 2; i++) {
-          ctx.beginPath();
-          ctx.moveTo(cx, cy + r * 0.2);
-          ctx.lineTo(cx + i * r * 0.22, cy - r * 0.35);
-          ctx.stroke();
-        }
-        break;
-
-      case 'blob':
-        ctx.beginPath();
-        for (let i = 0; i <= 8; i++) {
-          const angle = i * Math.PI / 4;
-          const wob = 0.55 + (i % 2 === 0 ? 0.1 : -0.05);
-          const x = cx + r * wob * Math.cos(angle);
-          const y = cy + r * wob * Math.sin(angle);
-          if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-        }
-        ctx.closePath();
-        ctx.fill(); ctx.stroke();
-        break;
-
-      case 'dragon':
-        ctx.beginPath();
-        ctx.moveTo(cx - r * 0.5, cy + r * 0.5);
-        ctx.quadraticCurveTo(cx - r * 0.6, cy - r * 0.3, cx, cy - r * 0.6);
-        ctx.quadraticCurveTo(cx + r * 0.5, cy - r * 0.7, cx + r * 0.35, cy - r * 0.1);
-        ctx.quadraticCurveTo(cx + r * 0.55, cy + r * 0.1, cx + r * 0.2, cy + r * 0.3);
-        ctx.quadraticCurveTo(cx, cy + r * 0.15, cx - r * 0.5, cy + r * 0.5);
-        ctx.closePath();
-        ctx.fill(); ctx.stroke();
-        break;
-
-      case 'spiky': {
-        ctx.beginPath();
-        const spikes = 8;
-        for (let i = 0; i < spikes * 2; i++) {
-          const angle = (Math.PI / spikes) * i;
-          const rad = i % 2 === 0 ? r * 0.65 : r * 0.4;
-          const x = cx + rad * Math.cos(angle);
-          const y = cy + rad * Math.sin(angle);
-          if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-        }
-        ctx.closePath();
-        ctx.fill(); ctx.stroke();
-        break;
-      }
-
-      case 'moon':
-        // Crescent drawn as a single lune path (outer arc + reversed inner
-        // arc), not a composite erase - erasing punches a transparent hole
-        // that shows whatever is behind the canvas element instead of a
-        // clean cutout.
-        ctx.beginPath();
-        ctx.arc(cx, cy, r * 0.62, Math.PI * 0.5, Math.PI * 1.5, false);
-        ctx.arc(cx + r * 0.32, cy, r * 0.5, Math.PI * 1.5, Math.PI * 0.5, true);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
-        break;
-
-      case 'star': {
-        ctx.beginPath();
-        const spikes = 5, outerR = r * 0.65, innerR = r * 0.28;
-        for (let i = 0; i < spikes * 2; i++) {
-          const angle = (Math.PI / spikes) * i - Math.PI / 2;
-          const rad = i % 2 === 0 ? outerR : innerR;
-          const x = cx + rad * Math.cos(angle);
-          const y = cy + rad * Math.sin(angle);
-          if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-        }
-        ctx.closePath();
-        ctx.fill(); ctx.stroke();
-        break;
-      }
-    }
-    ctx.restore();
+  function loadRandomizerAssets() {
+    if (randomizerAssetsPromise) return randomizerAssetsPromise;
+    const files = ['background.png', ...KINGDOM_TILES.map(t => t.icon)];
+    randomizerAssetsPromise = Promise.all(
+      files.map(f => loadImage(`randomizer-icons/${f}`).then(img => { randomizerImages[f] = img; }))
+    );
+    return randomizerAssetsPromise;
   }
 
   // Redraws the whole graphic from kingdomProgressLive - called whenever
@@ -1448,6 +1279,11 @@
   function drawRandomizerCanvas() {
     const canvas = document.getElementById('randomizerCanvas');
     if (!canvas) return;
+
+    if (!randomizerImages['background.png']) {
+      loadRandomizerAssets().then(() => { if (viewingRandomizer) drawRandomizerCanvas(); });
+      return;
+    }
 
     const baseW = 1200, baseH = 400;
     const dpr = window.devicePixelRatio || 1;
@@ -1458,13 +1294,7 @@
     const ctx = canvas.getContext('2d');
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, baseW, baseH);
-
-    const grad = ctx.createLinearGradient(0, 0, 0, baseH);
-    grad.addColorStop(0, '#7f9be0');
-    grad.addColorStop(0.5, '#c98fc9');
-    grad.addColorStop(1, '#e8b98a');
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, baseW, baseH);
+    ctx.drawImage(randomizerImages['background.png'], 0, 0, baseW, baseH);
 
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
@@ -1490,13 +1320,17 @@
 
       ctx.beginPath();
       ctx.arc(cx, badgeCy, r, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(255,255,255,0.15)';
+      ctx.fillStyle = tile.color;
       ctx.fill();
-      ctx.lineWidth = 3;
-      ctx.strokeStyle = 'rgba(0,0,0,0.55)';
+      ctx.lineWidth = 2.5;
+      ctx.strokeStyle = 'rgba(0,0,0,0.4)';
       ctx.stroke();
 
-      drawKingdomIcon(ctx, tile.icon, cx, badgeCy, r * 0.85, tile.color);
+      const iconImg = randomizerImages[tile.icon];
+      if (iconImg) {
+        const iconSize = r * 1.7;
+        ctx.drawImage(iconImg, cx - iconSize / 2, badgeCy - iconSize / 2, iconSize, iconSize);
+      }
 
       ctx.font = '800 15px -apple-system, "Segoe UI", Roboto, sans-serif';
       ctx.lineWidth = 3.5;
