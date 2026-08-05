@@ -7,17 +7,33 @@
 <style>
   * { box-sizing: border-box; }
 
+  /* Theme = one accent color x dark/light mode, applied as CSS variables
+     so 30 combinations stay maintainable instead of 30 hand-written
+     stylesheets. Only --accent varies visually a lot between themes of
+     the same mode; --bg/--panel/--text/--border/--dot stay put per mode
+     so contrast is never at risk. Defaults below are overwritten by
+     applyTheme() on load. */
+  :root {
+    --bg: #121212;
+    --panel: #1c1d21;
+    --text: #e6e6e6;
+    --muted: #888;
+    --border: #333;
+    --dot: #232323;
+    --accent: #5865F2;
+  }
+
   body {
     margin: 0;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    background-color: #0e0e0e;
-    color: #e6e6e6;
+    background-color: var(--bg);
+    color: var(--text);
     overflow: hidden; /* the canvas below handles its own scrolling */
   }
 
   .back-link {
     display: inline-block;
-    color: #8ab4f8;
+    color: var(--accent);
     text-decoration: none;
     font-size: 13px;
   }
@@ -26,26 +42,26 @@
 
   header {
     padding: 14px 20px 10px;
-    border-bottom: 1px solid #232323;
+    border-bottom: 1px solid var(--border);
   }
 
   header h1 { margin: 6px 0 2px; font-size: 1.2rem; }
-  header p.subtitle { margin: 0; font-size: 12.5px; color: #888; }
+  header p.subtitle { margin: 0; font-size: 12.5px; color: var(--muted); }
 
   .toolbar {
     display: flex;
     align-items: center;
     gap: 8px;
     padding: 10px 20px;
-    border-bottom: 1px solid #232323;
-    background-color: #141414;
+    border-bottom: 1px solid var(--border);
+    background-color: var(--panel);
     flex-wrap: wrap;
   }
 
   .toolbar button {
-    background-color: #2b2d31;
-    color: #fff;
-    border: 1px solid #3f4147;
+    background-color: var(--bg);
+    color: var(--text);
+    border: 1px solid var(--border);
     padding: 7px 14px;
     border-radius: 6px;
     font-size: 12.5px;
@@ -53,25 +69,52 @@
     cursor: pointer;
   }
 
-  .toolbar button:hover { border-color: #5865F2; }
+  .toolbar button:hover { border-color: var(--accent); }
+  .toolbar button.active { border-color: var(--accent); outline: 1px solid var(--accent); }
   .toolbar .spacer { flex: 1; }
-  .toolbar #clearBtn { background-color: #3a1c1c; border-color: #5c1c1c; }
+  .toolbar #clearBtn { background-color: #3a1c1c; border-color: #5c1c1c; color: #fff; }
   .toolbar #clearBtn:hover { border-color: #f87171; }
-  .toolbar .hint { font-size: 11.5px; color: #666; }
+  .toolbar .hint { font-size: 11.5px; color: var(--muted); }
+
+  /* ===================== THEME PICKER ===================== */
+  .theme-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 20px;
+    border-bottom: 1px solid var(--border);
+    background-color: var(--panel);
+    flex-wrap: wrap;
+  }
+
+  .theme-bar .theme-label { font-size: 11.5px; color: var(--muted); flex-shrink: 0; }
+  .theme-bar .theme-name { font-size: 11.5px; color: var(--text); font-weight: 600; min-width: 110px; }
+
+  .theme-row { display: flex; gap: 5px; flex-wrap: wrap; }
+
+  .theme-swatch {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    cursor: pointer;
+    padding: 0;
+  }
+  .theme-swatch.active { border-color: var(--text); box-shadow: 0 0 0 2px var(--panel), 0 0 0 3px var(--text); }
 
   .canvas-wrapper {
     position: relative;
     width: 100%;
-    height: calc(100vh - 108px);
+    height: calc(100vh - 148px);
     overflow: auto;
-    background-color: #121212;
+    background-color: var(--bg);
   }
 
   .canvas {
     position: relative;
     width: 2600px;
     height: 1600px;
-    background-image: radial-gradient(#232323 1px, transparent 1px);
+    background-image: radial-gradient(var(--dot) 1px, transparent 1px);
     background-size: 22px 22px;
   }
 
@@ -82,7 +125,15 @@
     user-select: none;
   }
 
-  .el.selected { outline: 2px solid #5865F2; outline-offset: 2px; }
+  .el.selected { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* Every inner content type fills its wrapper's exact geometry - stated
+     explicitly rather than relied on implicitly, since a plain block
+     child does not auto-fill an absolutely positioned parent's height. */
+  .el-box, .el-text, .el-image, .el-table, .el-circle, .el-line, .el-input, .el-checkbox, .el-icon {
+    width: 100%;
+    height: 100%;
+  }
 
   .el-box {
     background-color: #2b2d31;
@@ -98,7 +149,10 @@
     overflow: hidden;
   }
 
-  .el-box[contenteditable="true"] { cursor: text; }
+  .el-box[contenteditable="true"], .el-text[contenteditable="true"], .el-input[contenteditable="true"] { cursor: text; outline: none; }
+
+  .el-button { font-weight: 700; cursor: pointer; }
+  .el-badge { font-weight: 600; font-size: 12px; }
 
   .el-text {
     font-size: 16px;
@@ -107,8 +161,6 @@
     white-space: pre-wrap;
     overflow: hidden;
   }
-
-  .el-text[contenteditable="true"] { cursor: text; outline: none; }
 
   .el-image {
     background-color: #1a1a1a;
@@ -135,20 +187,64 @@
   }
   .el-table td:first-child { background-color: #1e1f22; font-weight: 600; }
 
-  /* Resize handles - 4 corners */
+  .el-circle { border-radius: 50%; border: 2px solid; }
+
+  .el-line { border-radius: 3px; }
+
+  .el-input {
+    display: flex;
+    align-items: center;
+    padding: 0 12px;
+    border: 1px solid;
+    border-radius: 6px;
+    font-size: 13px;
+    text-align: left;
+    justify-content: flex-start;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+
+  .el-checkbox {
+    border: 2px solid;
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-weight: 900;
+    cursor: pointer;
+    font-size: 16px;
+  }
+
+  .el-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+  }
+
+  /* Resize handles - 4 corners (both axes) + 4 edges (single axis), so a
+     box can be stretched wider without also getting taller, or vice
+     versa, not just resized diagonally from a corner. */
   .resize-handle {
     position: absolute;
-    width: 10px;
-    height: 10px;
-    background-color: #5865F2;
+    background-color: var(--accent);
     border: 1px solid #fff;
     border-radius: 2px;
     z-index: 10;
   }
+  .resize-handle.tl, .resize-handle.tr, .resize-handle.bl, .resize-handle.br { width: 10px; height: 10px; }
   .resize-handle.tl { top: -5px; left: -5px; cursor: nwse-resize; }
   .resize-handle.tr { top: -5px; right: -5px; cursor: nesw-resize; }
   .resize-handle.bl { bottom: -5px; left: -5px; cursor: nesw-resize; }
   .resize-handle.br { bottom: -5px; right: -5px; cursor: nwse-resize; }
+
+  .resize-handle.t, .resize-handle.b { width: 16px; height: 8px; left: 50%; transform: translateX(-50%); cursor: ns-resize; }
+  .resize-handle.t { top: -4px; }
+  .resize-handle.b { bottom: -4px; }
+  .resize-handle.l, .resize-handle.r { width: 8px; height: 16px; top: 50%; transform: translateY(-50%); cursor: ew-resize; }
+  .resize-handle.l { left: -4px; }
+  .resize-handle.r { right: -4px; }
 
   /* Floating per-element property bar, shown above the selected element */
   .prop-bar {
@@ -156,13 +252,15 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    background-color: #1c1d21;
-    border: 1px solid #333;
+    background-color: var(--panel);
+    border: 1px solid var(--border);
     border-radius: 6px;
     padding: 5px 7px;
     z-index: 20;
     font-size: 11.5px;
     white-space: nowrap;
+    max-width: 420px;
+    flex-wrap: wrap;
   }
 
   .prop-bar label { display: flex; align-items: center; gap: 4px; color: #aaa; }
@@ -173,7 +271,8 @@
     background-color: #2b2d31; color: #fff; border: 1px solid #3f4147; border-radius: 4px;
     padding: 3px 7px; cursor: pointer; font-size: 11.5px;
   }
-  .prop-bar button:hover { border-color: #5865F2; }
+  .prop-bar button:hover { border-color: var(--accent); }
+  .prop-bar button.glyph-btn { font-size: 14px; padding: 3px 6px; }
   .prop-bar .del-btn { background-color: #3a1c1c; border-color: #5c1c1c; color: #f87171; font-weight: 700; }
   .prop-bar .del-btn:hover { border-color: #f87171; }
 </style>
@@ -191,9 +290,25 @@
   <button data-add="text">+ Text</button>
   <button data-add="image">+ Image</button>
   <button data-add="table">+ Table</button>
+  <button data-add="button">+ Button</button>
+  <button data-add="badge">+ Badge</button>
+  <button data-add="input">+ Input</button>
+  <button data-add="checkbox">+ Checkbox</button>
+  <button data-add="circle">+ Circle</button>
+  <button data-add="line">+ Line</button>
+  <button data-add="icon">+ Icon</button>
   <div class="spacer"></div>
-  <span class="hint">Click to select &middot; drag corners to resize &middot; double-click to edit text &middot; Delete key or the &times; button to remove</span>
+  <span class="hint">Click to select &middot; drag edges/corners to resize &middot; double-click to edit text &middot; Delete key or the &times; button to remove</span>
   <button id="clearBtn">Clear Canvas</button>
+</div>
+
+<div class="theme-bar" id="themeBar">
+  <span class="theme-label">Theme:</span>
+  <span class="theme-name" id="themeName"></span>
+  <span class="theme-label">Dark</span>
+  <div class="theme-row" id="themeRowDark"></div>
+  <span class="theme-label">Light</span>
+  <div class="theme-row" id="themeRowLight"></div>
 </div>
 
 <div class="canvas-wrapper">
@@ -209,6 +324,67 @@
   let nextZ = 1;
   let selectedId = null;
   const domById = new Map(); // id -> that element's wrapper .el node, rebuilt on every full render()
+
+  // ===================== THEMES =====================
+  // 15 accent hues x 2 modes = 30 combinations, generated instead of
+  // hand-written - only --accent changes visually between themes of the
+  // same mode, so contrast never depends on getting 30 palettes right
+  // individually, just one per mode.
+  const ACCENTS = [
+    ['Blue', '#3b82f6'], ['Indigo', '#6366f1'], ['Violet', '#8b5cf6'], ['Purple', '#a855f7'], ['Fuchsia', '#d946ef'],
+    ['Pink', '#ec4899'], ['Rose', '#f43f5e'], ['Red', '#ef4444'], ['Orange', '#f97316'], ['Amber', '#f59e0b'],
+    ['Gold', '#eab308'], ['Lime', '#84cc16'], ['Green', '#22c55e'], ['Teal', '#14b8a6'], ['Cyan', '#06b6d4'],
+  ];
+  const MODES = {
+    dark: { label: 'Dark', bg: '#121212', panel: '#1c1d21', text: '#e6e6e6', muted: '#888', border: '#333', dot: '#232323' },
+    light: { label: 'Light', bg: '#f7f7f9', panel: '#ffffff', text: '#1a1a1e', muted: '#666', border: '#e2e2e8', dot: '#dcdce2' },
+  };
+  const THEMES = [];
+  Object.keys(MODES).forEach(modeId => {
+    ACCENTS.forEach(([name, hex]) => {
+      THEMES.push({ id: modeId + '-' + name.toLowerCase(), name: name + ' ' + MODES[modeId].label, mode: modeId, accent: hex, ...MODES[modeId] });
+    });
+  });
+
+  let currentTheme = THEMES[0];
+
+  function applyTheme(theme) {
+    currentTheme = theme;
+    const root = document.documentElement.style;
+    root.setProperty('--bg', theme.bg);
+    root.setProperty('--panel', theme.panel);
+    root.setProperty('--text', theme.text);
+    root.setProperty('--muted', theme.muted);
+    root.setProperty('--border', theme.border);
+    root.setProperty('--dot', theme.dot);
+    root.setProperty('--accent', theme.accent);
+    document.getElementById('themeName').textContent = theme.name;
+    document.querySelectorAll('.theme-swatch').forEach(s => s.classList.toggle('active', s.dataset.id === theme.id));
+    saveTheme();
+  }
+
+  function buildThemePicker() {
+    const dark = document.getElementById('themeRowDark');
+    const light = document.getElementById('themeRowLight');
+    THEMES.forEach(t => {
+      const btn = document.createElement('button');
+      btn.className = 'theme-swatch';
+      btn.style.backgroundColor = t.accent;
+      btn.dataset.id = t.id;
+      btn.title = t.name;
+      btn.addEventListener('click', () => applyTheme(t));
+      (t.mode === 'dark' ? dark : light).appendChild(btn);
+    });
+  }
+
+  function saveTheme() {
+    localStorage.setItem(STORAGE_KEY + '-theme', currentTheme.id);
+  }
+
+  function loadTheme() {
+    const savedId = localStorage.getItem(STORAGE_KEY + '-theme');
+    applyTheme(THEMES.find(t => t.id === savedId) || THEMES[0]);
+  }
 
   function load() {
     try {
@@ -262,7 +438,7 @@
         domEl.classList.add('selected');
         domEl.style.zIndex = data.z;
         if (!domEl.querySelector('.resize-handle')) {
-          ['tl', 'tr', 'bl', 'br'].forEach(corner => {
+          ['tl', 'tr', 'bl', 'br', 't', 'r', 'b', 'l'].forEach(corner => {
             const h = document.createElement('div');
             h.className = 'resize-handle ' + corner;
             domEl.appendChild(h);
@@ -299,6 +475,13 @@
     if (type === 'text') Object.assign(base, { w: 160, h: 40, text: 'Text', fontSize: 16, color: '#e6e6e6' });
     if (type === 'image') Object.assign(base, { w: 220, h: 150, src: '' });
     if (type === 'table') Object.assign(base, { w: 320, h: 140, rows: 3, cols: 3, cells: makeGrid(3, 3) });
+    if (type === 'button') Object.assign(base, { w: 140, h: 44, bg: currentTheme.accent, textColor: '#ffffff', radius: 8, text: 'Button' });
+    if (type === 'badge') Object.assign(base, { w: 110, h: 32, bg: '#15803d', textColor: '#ffffff', radius: 16, text: 'Badge' });
+    if (type === 'input') Object.assign(base, { w: 220, h: 40, bg: currentTheme.panel, border: currentTheme.border, textColor: currentTheme.muted, text: 'Input placeholder' });
+    if (type === 'checkbox') Object.assign(base, { w: 26, h: 26, checked: false, accentColor: currentTheme.accent });
+    if (type === 'circle') Object.assign(base, { w: 80, h: 80, bg: '#2b2d31', border: '#3f4147' });
+    if (type === 'line') Object.assign(base, { w: 200, h: 4, bg: currentTheme.border });
+    if (type === 'icon') Object.assign(base, { w: 48, h: 48, glyph: '★', color: currentTheme.accent });
     elements.push(base);
     // A brand-new element has no DOM node yet, so this needs the full
     // render() (unlike selecting an EXISTING element, which never
@@ -381,7 +564,17 @@
       function onUp() {
         document.removeEventListener('pointermove', onMove);
         document.removeEventListener('pointerup', onUp);
-        if (moved) save();
+        if (moved) {
+          save();
+        } else if (data.type === 'checkbox') {
+          // A genuine click (no drag) on a checkbox toggles it - reusing
+          // the `moved` flag this function already tracks, rather than a
+          // separate click listener that would need its own way to tell
+          // "was this a click or the end of a drag."
+          data.checked = !data.checked;
+          save();
+          refreshElementVisual(data);
+        }
       }
       document.addEventListener('pointermove', onMove);
       document.addEventListener('pointerup', onUp);
@@ -401,6 +594,10 @@
         if (corner.includes('t')) { data.h = Math.max(30, orig.h - dy); data.y = orig.y + (orig.h - data.h); }
         applyGeometry(domEl, data);
         positionPropBar(data);
+        if (data.type === 'icon') {
+          const iconInner = domEl.querySelector('.el-icon');
+          if (iconInner) iconInner.style.fontSize = Math.min(data.w, data.h) * 0.65 + 'px';
+        }
       }
       function onUp() {
         document.removeEventListener('pointermove', onMove);
@@ -451,6 +648,36 @@
         <button data-action="colplus">+Col</button>
         <button data-action="colminus">-Col</button>
       `;
+    } else if (data.type === 'button' || data.type === 'badge') {
+      bar.innerHTML = `
+        <label>Fill <input type="color" data-k="bg" value="${data.bg}"></label>
+        <label>Text <input type="color" data-k="textColor" value="${data.textColor}"></label>
+        <label>Radius <input type="range" min="0" max="30" data-k="radius" value="${data.radius}"></label>
+      `;
+    } else if (data.type === 'input') {
+      bar.innerHTML = `
+        <label>Fill <input type="color" data-k="bg" value="${data.bg}"></label>
+        <label>Border <input type="color" data-k="border" value="${data.border}"></label>
+        <label>Text <input type="color" data-k="textColor" value="${data.textColor}"></label>
+      `;
+    } else if (data.type === 'circle') {
+      bar.innerHTML = `
+        <label>Fill <input type="color" data-k="bg" value="${data.bg}"></label>
+        <label>Border <input type="color" data-k="border" value="${data.border}"></label>
+      `;
+    } else if (data.type === 'line') {
+      bar.innerHTML = `<label>Color <input type="color" data-k="bg" value="${data.bg}"></label>`;
+    } else if (data.type === 'checkbox') {
+      bar.innerHTML = `
+        <label>Color <input type="color" data-k="accentColor" value="${data.accentColor}"></label>
+        <button data-action="toggle">${data.checked ? 'Uncheck' : 'Check'}</button>
+      `;
+    } else if (data.type === 'icon') {
+      const glyphs = ['★', '♥', '✓', '✗', '⚙', '🔍', '📁', '🔔', '👤', '⬆', '⬇', '⬅', '➡', '▶', '🗑', '✏', '⚠', 'ℹ', '🔒', '📷'];
+      bar.innerHTML = `
+        <label>Color <input type="color" data-k="color" value="${data.color}"></label>
+        ${glyphs.map(g => `<button class="glyph-btn" data-glyph="${g}">${g}</button>`).join('')}
+      `;
     }
 
     const delBtn = document.createElement('button');
@@ -496,6 +723,24 @@
     if (rowMinus) rowMinus.addEventListener('click', () => { if (data.rows > 1) { data.rows--; data.cells.pop(); save(); refreshElementVisual(data); } });
     if (colPlus) colPlus.addEventListener('click', () => { data.cols++; data.cells.forEach(r => r.push('')); save(); refreshElementVisual(data); });
     if (colMinus) colMinus.addEventListener('click', () => { if (data.cols > 1) { data.cols--; data.cells.forEach(r => r.pop()); save(); refreshElementVisual(data); } });
+
+    const toggleBtn = bar.querySelector('[data-action="toggle"]');
+    if (toggleBtn) {
+      toggleBtn.addEventListener('click', () => {
+        data.checked = !data.checked;
+        toggleBtn.textContent = data.checked ? 'Uncheck' : 'Check';
+        save();
+        refreshElementVisual(data);
+      });
+    }
+
+    bar.querySelectorAll('[data-glyph]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        data.glyph = btn.dataset.glyph;
+        save();
+        refreshElementVisual(data);
+      });
+    });
 
     return bar;
   }
@@ -566,9 +811,53 @@
         table.appendChild(tr);
       });
       inner.appendChild(table);
+    } else if (data.type === 'button' || data.type === 'badge') {
+      // Both reuse the box's flex-centered-text look, just with different
+      // default sizing/font weight (el-button/el-badge add-on classes).
+      inner = document.createElement('div');
+      inner.className = 'el-box el-' + data.type;
+      inner.textContent = data.text;
+      inner.style.backgroundColor = data.bg;
+      inner.style.color = data.textColor;
+      inner.style.borderRadius = data.radius + 'px';
+      inner.style.border = 'none';
+      makeDblClickEditable(inner, (text) => { data.text = text; save(); });
+    } else if (data.type === 'input') {
+      inner = document.createElement('div');
+      inner.className = 'el-input';
+      inner.textContent = data.text;
+      inner.style.backgroundColor = data.bg;
+      inner.style.borderColor = data.border;
+      inner.style.color = data.textColor;
+      makeDblClickEditable(inner, (text) => { data.text = text; save(); });
+    } else if (data.type === 'circle') {
+      inner = document.createElement('div');
+      inner.className = 'el-circle';
+      inner.style.backgroundColor = data.bg;
+      inner.style.borderColor = data.border;
+    } else if (data.type === 'line') {
+      inner = document.createElement('div');
+      inner.className = 'el-line';
+      inner.style.backgroundColor = data.bg;
+    } else if (data.type === 'checkbox') {
+      inner = document.createElement('div');
+      inner.className = 'el-checkbox';
+      updateCheckboxVisual(inner, data);
+    } else if (data.type === 'icon') {
+      inner = document.createElement('div');
+      inner.className = 'el-icon';
+      inner.textContent = data.glyph;
+      inner.style.color = data.color;
+      inner.style.fontSize = Math.min(data.w, data.h) * 0.65 + 'px';
     }
 
     return inner;
+  }
+
+  function updateCheckboxVisual(inner, data) {
+    inner.style.borderColor = data.accentColor;
+    inner.style.backgroundColor = data.checked ? data.accentColor : 'transparent';
+    inner.textContent = data.checked ? '✓' : '';
   }
 
   // Swaps in freshly-built inner content for ONE element without
@@ -597,7 +886,7 @@
     domById.set(data.id, domEl);
 
     if (data.id === selectedId) {
-      ['tl', 'tr', 'bl', 'br'].forEach(corner => {
+      ['tl', 'tr', 'bl', 'br', 't', 'r', 'b', 'l'].forEach(corner => {
         const h = document.createElement('div');
         h.className = 'resize-handle ' + corner;
         domEl.appendChild(h);
@@ -628,6 +917,8 @@
     }
   }
 
+  buildThemePicker();
+  loadTheme();
   load();
   render();
 </script>
