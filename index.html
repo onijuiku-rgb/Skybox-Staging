@@ -68,18 +68,12 @@
 
   .map-shape {
     position: absolute;
-    top: 8%; left: 12%; right: 12%; bottom: 8%;
-    background: #7ec98f;
-    border: 3px solid #5fa870;
-    border-radius: 42% 58% 55% 45% / 48% 45% 55% 52%;
+    top: 4%; left: 22%; right: 22%; bottom: 4%;
   }
-  .map-shape::after {
-    content: "";
-    position: absolute; inset: 14%;
-    background: #8fd49e;
-    border-radius: 45% 55% 50% 50% / 50% 48% 52% 50%;
-    opacity: 0.6;
-  }
+  .map-shape svg { width: 100%; height: 100%; filter: drop-shadow(0 5px 0 #4f9760); }
+  .shape-outline { fill: #4f9760; }
+  .shape-fill { fill: #7ec98f; }
+  .shape-inner { fill: #8fd49e; opacity: 0.7; }
 
   .pin {
     position: absolute;
@@ -101,15 +95,15 @@
   }
   .pin-badge span { transform: rotate(45deg); }
 
-  .pin1 { top: 28%; left: 30%; }
-  .pin2 { top: 45%; left: 60%; }
-  .pin3 { top: 65%; left: 38%; }
+  .pin1 { top: 58%; left: 29%; }
+  .pin2 { top: 58%; left: 71%; }
+  .pin3 { top: 82%; left: 50%; }
   .pin1 .pin-badge { background: #4c6fef; }
   .pin2 .pin-badge { background: #6fcf97; }
   .pin3 .pin-badge { background: #ef8c4c; }
 
   .you-are-here {
-    position: absolute; top: 14%; left: 14%;
+    position: absolute; top: 20%; left: 39%;
     display: flex; align-items: center; justify-content: center;
     width: 30px; height: 30px; border-radius: 50%;
     background: #e63946; color: #fff; font-weight: 900; font-size: 13px;
@@ -209,6 +203,19 @@
     <div class="ruler-left"><span>A</span><span>B</span><span>C</span><span>D</span><span>E</span></div>
 
     <div class="map-shape">
+      <svg viewBox="0 0 200 220" preserveAspectRatio="xMidYMid meet">
+        <g class="shape-outline" transform="translate(100 116) scale(1.035) translate(-100 -116)">
+          <path d="M 78 116 C 68 90 60 55 66 28 C 68 14 78 6 86 10 C 92 14 90 30 92 50 C 94 75 96 96 98 116 Z"/>
+          <path d="M 122 116 C 132 90 140 55 134 28 C 132 14 122 6 114 10 C 108 14 110 30 108 50 C 106 75 104 96 102 116 Z"/>
+          <circle cx="100" cy="150" r="64"/>
+        </g>
+        <path class="shape-fill" d="M 78 116 C 68 90 60 55 66 28 C 68 14 78 6 86 10 C 92 14 90 30 92 50 C 94 75 96 96 98 116 Z"/>
+        <path class="shape-fill" d="M 122 116 C 132 90 140 55 134 28 C 132 14 122 6 114 10 C 108 14 110 30 108 50 C 106 75 104 96 102 116 Z"/>
+        <circle class="shape-fill" cx="100" cy="150" r="64"/>
+        <ellipse class="shape-inner" cx="80" cy="62" rx="6" ry="34" transform="rotate(-10 80 62)"/>
+        <ellipse class="shape-inner" cx="120" cy="62" rx="6" ry="34" transform="rotate(10 120 62)"/>
+        <circle class="shape-inner" cx="100" cy="160" r="34"/>
+      </svg>
       <div class="you-are-here" title="You Are Here">M</div>
       <a class="pin pin1" href="names/" title="Skybox Names"><div class="pin-badge"><span>N</span></div></a>
       <a class="pin pin2" href="skybox/" title="Skybox Gallery"><div class="pin-badge"><span>G</span></div></a>
