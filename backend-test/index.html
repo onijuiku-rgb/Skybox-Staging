@@ -919,6 +919,9 @@
   let currentData = {};        // { subareaName: { skyboxName: status } } for the CURRENTLY ACTIVE kingdom only
   let unsubscribeSnapshot = null; // stops the previous Kingdom's live listener when switching tabs
   let viewingGuide = false; // true while the Guide tab (authorizedEditors/admins only) is showing
+  let kingdomsLoaded = false;   // kingdoms-config.json has finished loading
+  let authResolvedOnce = false; // Firebase has told us the sign-in state at least once
+  let initialViewChosen = false; // the landing tab (Guide vs first Kingdom) has been picked
 
   // Filters (shared across all Kingdoms, not reset when switching tabs)
   let hiddenStatuses = new Set(["Good to Use"]); // "Good to Use" hidden by default - the summary table is meant to highlight problems, not everything
@@ -987,8 +990,34 @@
     // and bail out of the Guide view if access was just lost.
     buildTabs();
     if (viewingGuide && !isEditor) switchKingdom(activeSlug || KINGDOMS[0].slug);
+
+    if (!authResolvedOnce) {
+      // First time hearing from Firebase at all (either an already-signed-in
+      // session from a previous visit, or confirmation that nobody's signed
+      // in) - this decides the landing tab once kingdoms-config.json is
+      // also ready (see maybeChooseInitialView).
+      authResolvedOnce = true;
+      maybeChooseInitialView();
+    } else if (isEditor) {
+      // A later transition into a signed-in editor/admin session (an
+      // interactive sign-in after the page already settled on a tab) -
+      // jump straight to the Guide regardless of what they were looking at.
+      showGuide();
+    }
   });
 
+  // Picks the landing tab exactly once, as soon as both the Kingdom list
+  // and the initial auth check are ready: Guide for a signed-in
+  // authorizedEditor/admin, Cap Kingdom (the first Kingdom) for everyone else.
+  function maybeChooseInitialView() {
+    if (initialViewChosen || !kingdomsLoaded || !authResolvedOnce) return;
+    initialViewChosen = true;
+    if (isEditor) {
+      showGuide();
+    } else {
+      switchKingdom(KINGDOMS[0].slug);
+    }
+  }
 
   // ===================== LOAD CONFIG, THEN BUILD TABS =====================
   async function init() {
@@ -996,11 +1025,12 @@
     const config = await res.json();
     KINGDOMS = config.kingdoms;
     SKYBOXES = config.skyboxes;
+    kingdomsLoaded = true;
 
     buildFilterPanel();
     buildTabs();
     populateSkyboxDatalist();
-    switchKingdom(KINGDOMS[0].slug); // open on the first Kingdom by default
+    maybeChooseInitialView();
   }
 
   function populateSkyboxDatalist() {
