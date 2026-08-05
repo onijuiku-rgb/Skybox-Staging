@@ -95,9 +95,9 @@
   }
   .pin-badge span { transform: rotate(45deg); }
 
-  .pin1 { top: 58%; left: 29%; }
-  .pin2 { top: 58%; left: 71%; }
-  .pin3 { top: 82%; left: 50%; }
+  .pin1 { top: 52%; left: 32%; }
+  .pin2 { top: 52%; left: 68%; }
+  .pin3 { top: 70%; left: 50%; }
   .pin1 .pin-badge { background: #4c6fef; }
   .pin2 .pin-badge { background: #6fcf97; }
   .pin3 .pin-badge { background: #ef8c4c; }
@@ -156,6 +156,51 @@
     display: flex; align-items: center; justify-content: center;
     box-shadow: 0 6px 14px rgba(0,0,0,0.3);
     border: 3px solid #2a1f08;
+  }
+
+  /* ===================== CREDITS (hidden until reveal) ===================== */
+  .credits-button {
+    position: absolute; bottom: 62px; right: 20px;
+    width: 30px; height: 30px; border-radius: 50%;
+    background: rgba(255,255,255,0.9); color: #b5860f; font-weight: 900; font-size: 13px;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.25);
+    border: 2px solid #2a1f08;
+    cursor: pointer;
+  }
+  .credits-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(20,15,5,0.72);
+    align-items: center; justify-content: center;
+    z-index: 100;
+    padding: 24px;
+  }
+  .credits-overlay.open { display: flex; }
+  .credits-modal {
+    background: #f7f3e9;
+    border-radius: 10px;
+    border: 2px solid #d8cfb0;
+    max-width: 560px; width: 100%;
+    max-height: 84vh;
+    overflow-y: auto;
+    padding: 28px 30px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+    position: relative;
+  }
+  .credits-modal h2 { font-size: 1.4rem; margin: 0 0 10px; color: #1f2a1f; }
+  .credits-modal h3 { font-size: 1rem; margin: 20px 0 8px; color: #1f2a1f; }
+  .credits-modal p { font-size: 12.5px; line-height: 1.6; color: #4a4436; margin: 0 0 10px; }
+  .credits-list { list-style: none; margin: 0 0 6px; padding: 0; }
+  .credits-list li { font-size: 12px; line-height: 1.7; color: #3a3626; }
+  .credits-list li b { color: #1f2a1f; }
+  .credits-sign { font-style: italic; font-size: 12px; color: #6b6248; margin-top: 16px; }
+  .credits-close {
+    position: absolute; top: 12px; right: 14px;
+    width: 26px; height: 26px; border-radius: 50%;
+    background: #2a1f08; color: #fff; border: none;
+    font-size: 14px; font-weight: 900; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
   }
 
   @media (max-width: 900px) {
@@ -263,8 +308,62 @@
     </div>
 
     <div class="a-button">A</div>
+    <button id="creditsButton" class="credits-button" title="Credits" aria-label="Credits" style="display:none">&#9733;</button>
   </div>
 
 </div>
+
+<div id="creditsOverlay" class="credits-overlay">
+  <div class="credits-modal">
+    <button id="creditsClose" class="credits-close" aria-label="Close">&times;</button>
+    <h2>Thanks</h2>
+    <p>And so, all the skyboxes have been tested in every kingdom, every single subarea, all for the max setting, so you can play with stabilze shaders off without the game becoming unplayable.</p>
+
+    <h3>Now I do want to give thanks to all the Testers who have helped test all these skyboxes in everything:</h3>
+    <ul class="credits-list">
+      <li><b>@onijuiku</b> - ofc Me, Cap Kingdom, Lost Kingdom, Cloud Kingdom, Darker Side</li>
+      <li><b>@nindybk</b> - worked on Lake Kingdom, Partial bowsers</li>
+      <li><b>@retrosnug</b> - Ruined Kingdom, Partial Metro</li>
+      <li><b>@mickystam521</b> - Partial Cascade</li>
+      <li><b>@triblades_01975</b> - Cascade kingdom,</li>
+      <li><b>@kosmirionepos</b> - a fallen tester, due to PC specs</li>
+      <li><b>@kleintimmi</b> - he was here, he just existed</li>
+    </ul>
+
+    <h3>Lastly To the People who made all of this possible, and I am Truely Grateful for:</h3>
+    <ul class="credits-list">
+      <li><b>@firerisingraging</b> - for allowing me to use his Tracker Code to make the Grid for all the skyboxes, helped make the Spreadsheet, and the Graphic for the skybox state</li>
+      <li><b>@baconfearmc</b> - for Providing the Debug Level for me to get all the Images for the Skybox Grid</li>
+      <li><b>@maliciousmajora</b> - For Providing the In-Game Names for this project</li>
+    </ul>
+
+    <h3>Last person to mention:</h3>
+    <ul class="credits-list">
+      <li><b>@secretdev</b> - For allowing me to make this project possible, and all of this possible in general, Could Never have done this without him, we all give our Love to you Secretdev.</li>
+    </ul>
+
+    <p>This Project has been alot of Fun, and ofc it isnt over, same with the logic state, there is probably going to be some edge cases that will need to be fixed as we are not perfect, and I will gladly work with the team again to fix those edge cases. I Do Hope yall Enjoy what we have cooked up, and have a very pleasant day to you all.</p>
+
+    <p class="credits-sign">Sincerly Onijuiku_</p>
+  </div>
+</div>
+
+<script>
+  // Flip to true when it's time to surprise the testers with the credits button.
+  const CREDITS_REVEALED = false;
+
+  const creditsButton = document.getElementById('creditsButton');
+  const creditsOverlay = document.getElementById('creditsOverlay');
+  const creditsClose = document.getElementById('creditsClose');
+
+  if (CREDITS_REVEALED) {
+    creditsButton.style.display = 'flex';
+  }
+  creditsButton.addEventListener('click', () => creditsOverlay.classList.add('open'));
+  creditsClose.addEventListener('click', () => creditsOverlay.classList.remove('open'));
+  creditsOverlay.addEventListener('click', (e) => {
+    if (e.target === creditsOverlay) creditsOverlay.classList.remove('open');
+  });
+</script>
 </body>
 </html>
