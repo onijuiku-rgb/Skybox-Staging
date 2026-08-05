@@ -229,7 +229,7 @@
 <div class="brochure">
 
   <div class="panel-left">
-    <div class="hero-photo"><img src="https://cdn.jsdelivr.net/gh/onijuiku-rgb/Skybox_Images/Images/CapWorldHomeStage.png" alt=""></div>
+    <div class="hero-photo"><img id="heroPhoto" src="https://cdn.jsdelivr.net/gh/onijuiku-rgb/Skybox_Images/Images/CapWorldHomeStage.png" alt=""></div>
     <div class="kicker">Super Mario Odyssey</div>
     <h1>Skybox Hub</h1>
     <p class="subtitle">Community reference &amp; live testing hub</p>
@@ -245,8 +245,8 @@
     </table>
 
     <div class="thumb-row">
-      <img src="https://cdn.jsdelivr.net/gh/onijuiku-rgb/Skybox_Images/Images/CloudWorldHomeStage.png" alt="">
-      <img src="https://cdn.jsdelivr.net/gh/onijuiku-rgb/Skybox_Images/Images/LavaWorldHomeStage.png" alt="">
+      <img id="thumbPhoto1" src="https://cdn.jsdelivr.net/gh/onijuiku-rgb/Skybox_Images/Images/CloudWorldHomeStage.png" alt="">
+      <img id="thumbPhoto2" src="https://cdn.jsdelivr.net/gh/onijuiku-rgb/Skybox_Images/Images/LavaWorldHomeStage.png" alt="">
     </div>
 
     <div class="body-block">
@@ -365,6 +365,32 @@
     <p class="credits-sign">Sincerly Onijuiku_</p>
   </div>
 </div>
+
+<script>
+  // Swaps the hero photo + 2 thumbnails for 3 random skyboxes on every
+  // load, so the top-left photos aren't the same every visit. Cap World
+  // Home Stage is excluded from the pool since it represents the hub
+  // itself, not a random pick.
+  fetch('skybox/skybox.json')
+    .then(res => res.json())
+    .then(entries => {
+      const pool = entries.filter(e => e.name !== 'CapWorldHomeStage');
+      for (let i = pool.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [pool[i], pool[j]] = [pool[j], pool[i]];
+      }
+      const [hero, thumb1, thumb2] = pool;
+
+      const heroEl = document.getElementById('heroPhoto');
+      const thumb1El = document.getElementById('thumbPhoto1');
+      const thumb2El = document.getElementById('thumbPhoto2');
+
+      if (hero && heroEl) { heroEl.src = hero.image; heroEl.alt = hero.name; }
+      if (thumb1 && thumb1El) { thumb1El.src = thumb1.image; thumb1El.alt = thumb1.name; }
+      if (thumb2 && thumb2El) { thumb2El.src = thumb2.image; thumb2El.alt = thumb2.name; }
+    })
+    .catch(() => {}); // keep the default photos if the fetch fails
+</script>
 
 <script type="module">
   // Live overall testing progress, shown under "Three Ways In" - same
