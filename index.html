@@ -6,111 +6,258 @@
 <title>Super Mario Odyssey Skybox Project</title>
 <style>
   * { box-sizing: border-box; }
-
   body {
     margin: 0;
-    min-height: 100vh;
-    background-color: #121212;
-    color: #e6e6e6;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: #1a1a1a;
+    color: #2a2a2a;
+  }
+
+  .brochure {
+    display: flex;
+    min-height: 100vh;
+  }
+
+  /* ===================== LEFT: INFO PANEL ===================== */
+  .panel-left {
+    width: 22%;
+    min-width: 300px;
+    background: #f7f3e9;
+    padding: 22px 22px 16px;
+    border-right: 2px solid #d8cfb0;
+  }
+
+  .hero-photo { border-radius: 6px; overflow: hidden; margin-bottom: 14px; box-shadow: 0 6px 14px rgba(0,0,0,0.25); }
+  .hero-photo img { width: 100%; height: 110px; object-fit: cover; display: block; }
+
+  .kicker { font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: #8a7a4a; font-weight: 800; }
+  .panel-left h1 { font-size: 1.7rem; margin: 4px 0 2px; font-weight: 900; color: #1f2a1f; }
+  .subtitle { font-size: 11.5px; color: #6b6248; margin: 0 0 12px; }
+
+  hr { border: none; border-top: 2px solid #d8cfb0; margin: 12px 0; }
+
+  .section-title { font-size: 1.1rem; margin: 0 0 6px; font-weight: 800; color: #1f2a1f; }
+  .lede { font-size: 12px; color: #4a4436; line-height: 1.5; margin: 0 0 12px; }
+
+  .stats-table { width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 14px; }
+  .stats-table td { padding: 4px 0; border-bottom: 1px solid #e5ddc4; }
+  .stats-table td:first-child { color: #8a7a4a; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; font-size: 9.5px; }
+  .stats-table td:last-child { text-align: right; font-weight: 700; color: #1f2a1f; }
+
+  .thumb-row { display: flex; gap: 8px; margin-bottom: 14px; }
+  .thumb-row img { width: 50%; height: 62px; object-fit: cover; border-radius: 4px; display: block; }
+
+  .body-block h3 { font-size: 12.5px; margin: 0 0 4px; color: #1f2a1f; font-weight: 800; }
+  .body-block p { font-size: 11px; color: #55503f; line-height: 1.55; margin: 0 0 10px; }
+
+  .credit { font-size: 9.5px; color: #a99b6e; margin-top: 4px; }
+  .credit a { color: #8a7a4a; }
+
+  /* ===================== CENTER: MAP PANEL ===================== */
+  .panel-map {
+    flex: 1;
+    position: relative;
+    background: #cfe8d8;
+    overflow: hidden;
+    min-height: 500px;
+  }
+
+  .ruler-top, .ruler-left { position: absolute; font-size: 9px; color: rgba(0,0,0,0.28); font-weight: 700; }
+  .ruler-top { top: 6px; left: 0; right: 0; display: flex; justify-content: space-between; padding: 0 24px; }
+  .ruler-left { left: 6px; top: 0; bottom: 0; display: flex; flex-direction: column; justify-content: space-between; padding: 24px 0; }
+
+  .map-shape {
+    position: absolute;
+    top: 8%; left: 12%; right: 12%; bottom: 8%;
+    background: #7ec98f;
+    border: 3px solid #5fa870;
+    border-radius: 42% 58% 55% 45% / 48% 45% 55% 52%;
+  }
+  .map-shape::after {
+    content: "";
+    position: absolute; inset: 14%;
+    background: #8fd49e;
+    border-radius: 45% 55% 50% 50% / 50% 48% 52% 50%;
+    opacity: 0.6;
+  }
+
+  .pin {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    color: #fff;
+    font-weight: 900;
+    font-size: 14px;
+    z-index: 2;
+  }
+  .pin-badge {
+    width: 34px; height: 34px; border-radius: 50% 50% 50% 0;
+    transform: rotate(-45deg);
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 6px 10px rgba(0,0,0,0.35);
+    border: 2px solid #fff;
+  }
+  .pin-badge span { transform: rotate(45deg); }
+
+  .pin1 { top: 28%; left: 30%; }
+  .pin2 { top: 45%; left: 60%; }
+  .pin3 { top: 65%; left: 38%; }
+  .pin1 .pin-badge { background: #4c6fef; }
+  .pin2 .pin-badge { background: #6fcf97; }
+  .pin3 .pin-badge { background: #ef8c4c; }
+
+  .you-are-here {
+    position: absolute; top: 14%; left: 14%;
+    display: flex; align-items: center; justify-content: center;
+    width: 30px; height: 30px; border-radius: 50%;
+    background: #e63946; color: #fff; font-weight: 900; font-size: 13px;
+    border: 3px solid #fff; box-shadow: 0 6px 10px rgba(0,0,0,0.4); z-index: 3;
+  }
+
+  .legend {
+    position: absolute; bottom: 14px; left: 14px;
+    background: rgba(255,255,255,0.85);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 10.5px;
+    color: #2a2a2a;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    padding: 60px 20px;
+    gap: 5px;
+  }
+  .legend div { display: flex; align-items: center; gap: 8px; }
+  .legend .dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+
+  /* ===================== RIGHT: LORE PANEL ===================== */
+  .panel-right {
+    width: 24%;
+    min-width: 300px;
+    background: #f4b942;
+    padding: 20px 20px 60px;
+    position: relative;
+    border-left: 2px solid #d99e2a;
   }
 
-  h1 {
-    margin: 0 0 8px;
-    font-size: 1.8rem;
-    text-align: center;
-  }
+  .story-block { display: flex; gap: 10px; margin-bottom: 16px; text-decoration: none; }
+  .story-text h3 { font-size: 12px; margin: 0 0 4px; color: #2a1f08; font-weight: 800; }
+  .story-text p { font-size: 10.5px; color: #4a3a12; line-height: 1.45; margin: 0; }
+  .story-photo { width: 74px; height: 54px; object-fit: cover; border-radius: 5px; flex-shrink: 0; box-shadow: 0 4px 8px rgba(0,0,0,0.25); }
 
-  p.subtitle {
-    color: #999;
-    margin: 0 0 40px;
-    text-align: center;
-    max-width: 480px;
-    font-size: 14px;
-  }
-
-  .link-grid {
-    display: grid;
-    gap: 16px;
-    width: 100%;
-    max-width: 420px;
-  }
-
-  .link-card {
-    display: block;
-    background-color: rgba(30, 31, 34, 0.9);
-    border: 1px solid #3f4147;
+  .keys-box {
+    background: rgba(255,255,255,0.25);
+    border: 1.5px solid rgba(255,255,255,0.4);
     border-radius: 8px;
-    padding: 18px 20px;
-    text-decoration: none;
-    color: inherit;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.5);
-    transition: border-color 0.15s ease;
+    padding: 12px 14px;
+    margin-top: 6px;
+  }
+  .keys-box h4 { font-size: 11.5px; margin: 0 0 6px; color: #2a1f08; font-weight: 800; }
+  .keys-box ol { margin: 0; padding-left: 16px; font-size: 10px; color: #3a2c0a; line-height: 1.6; }
+
+  .a-button {
+    position: absolute; bottom: 16px; right: 16px;
+    width: 40px; height: 40px; border-radius: 50%;
+    background: #fff; color: #f4b942; font-weight: 900; font-size: 17px;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 6px 14px rgba(0,0,0,0.3);
+    border: 3px solid #2a1f08;
   }
 
-  .link-card:hover {
-    border-color: #5865F2;
+  @media (max-width: 900px) {
+    .brochure { flex-direction: column; }
+    .panel-left, .panel-right { width: 100%; min-width: 0; }
+    .panel-map { min-height: 420px; }
   }
-
-  .link-card .card-title {
-    font-weight: 600;
-    font-size: 15px;
-    color: #ffffff;
-    margin-bottom: 4px;
-    border-left: 4px solid #5865F2;
-    padding-left: 10px;
-  }
-
-  .link-card .card-desc {
-    font-size: 12px;
-    color: #999;
-    padding-left: 14px;
-  }
-
-  .link-card.disabled {
-    opacity: 0.5;
-    pointer-events: none;
-  }
-
-  footer {
-    margin-top: 60px;
-    color: #555;
-    font-size: 12px;
-    text-align: center;
-  }
-
-  footer a { color: #8ab4f8; }
 </style>
 </head>
 <body>
 
-<h1>Super Mario Odyssey Skybox Project</h1>
-<p class="subtitle">Community reference material from ongoing skybox testing and documentation.</p>
+<div class="brochure">
 
-<div class="link-grid">
-  <a class="link-card" href="names/">
-    <div class="card-title">Skybox Names</div>
-    <div class="card-desc">All 136 internal skybox names and where each one is used in-game.</div>
-  </a>
+  <div class="panel-left">
+    <div class="hero-photo"><img src="https://cdn.jsdelivr.net/gh/onijuiku-rgb/Skybox_Images/Images/CapWorldHomeStage.png" alt=""></div>
+    <div class="kicker">Super Mario Odyssey</div>
+    <h1>Skybox Hub</h1>
+    <p class="subtitle">Community reference &amp; live testing hub</p>
+    <hr>
+    <div class="section-title">Explore the Project</div>
+    <p class="lede">Track, document, and browse every skybox across all 17 Kingdoms.</p>
 
-  <a class="link-card" href="skybox/">
-    <div class="card-title">Skybox Gallery</div>
-    <div class="card-desc">Browse every documented skybox in one connection map.</div>
-  </a>
+    <table class="stats-table">
+      <tr><td>Skyboxes</td><td>136</td></tr>
+      <tr><td>Kingdoms</td><td>17</td></tr>
+      <tr><td>Status</td><td>Active</td></tr>
+      <tr><td>Access</td><td>Public</td></tr>
+    </table>
 
-  <a class="link-card" href="backend-test/">
-    <div class="card-title">Skybox Patrol</div>
-    <div class="card-desc">Live results from testing every skybox in every Kingdom.</div>
-  </a>
+    <div class="thumb-row">
+      <img src="https://cdn.jsdelivr.net/gh/onijuiku-rgb/Skybox_Images/Images/CloudWorldHomeStage.png" alt="">
+      <img src="https://cdn.jsdelivr.net/gh/onijuiku-rgb/Skybox_Images/Images/LavaWorldHomeStage.png" alt="">
+    </div>
+
+    <div class="body-block">
+      <h3>Built By Testers</h3>
+      <p>Every entry here comes from real testing sessions - checked for lag, visual glitches, and general fit before it's marked good to use.</p>
+    </div>
+
+    <p class="credit">Images hosted from this repository via <a href="https://www.jsdelivr.com/" target="_blank" rel="noopener">jsDelivr</a>.</p>
+  </div>
+
+  <div class="panel-map">
+    <div class="ruler-top"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span></div>
+    <div class="ruler-left"><span>A</span><span>B</span><span>C</span><span>D</span><span>E</span></div>
+
+    <div class="map-shape">
+      <div class="you-are-here" title="You Are Here">M</div>
+      <a class="pin pin1" href="names/" title="Skybox Names"><div class="pin-badge"><span>N</span></div></a>
+      <a class="pin pin2" href="skybox/" title="Skybox Gallery"><div class="pin-badge"><span>G</span></div></a>
+      <a class="pin pin3" href="backend-test/" title="Skybox Patrol"><div class="pin-badge"><span>P</span></div></a>
+    </div>
+
+    <div class="legend">
+      <div><span class="dot" style="background:#e63946"></span>You Are Here</div>
+      <div><span class="dot" style="background:#4c6fef"></span>Skybox Names</div>
+      <div><span class="dot" style="background:#6fcf97"></span>Skybox Gallery</div>
+      <div><span class="dot" style="background:#ef8c4c"></span>Skybox Patrol</div>
+    </div>
+  </div>
+
+  <div class="panel-right">
+    <a class="story-block" href="names/">
+      <div class="story-text">
+        <h3>Skybox Names</h3>
+        <p>All 136 internal skybox names, and exactly where each one is used in-game.</p>
+      </div>
+      <img class="story-photo" src="https://cdn.jsdelivr.net/gh/onijuiku-rgb/Skybox_Images/Images/SandWorldHomeStage.png" alt="">
+    </a>
+    <a class="story-block" href="skybox/">
+      <div class="story-text">
+        <h3>Skybox Gallery</h3>
+        <p>Browse every documented skybox in one connection map.</p>
+      </div>
+      <img class="story-photo" src="https://cdn.jsdelivr.net/gh/onijuiku-rgb/Skybox_Images/Images/ForestWorldHomeStage.png" alt="">
+    </a>
+    <a class="story-block" href="backend-test/">
+      <div class="story-text">
+        <h3>Skybox Patrol</h3>
+        <p>Live results from testing every skybox in every Kingdom.</p>
+      </div>
+      <img class="story-photo" src="https://cdn.jsdelivr.net/gh/onijuiku-rgb/Skybox_Images/Images/SkyWorldHomeStage.png" alt="">
+    </a>
+
+    <div class="keys-box">
+      <h4>Three Ways In</h4>
+      <ol>
+        <li>Look up a skybox name and where it's used</li>
+        <li>Browse the full gallery, Kingdom by Kingdom</li>
+        <li>Check live testing status on Skybox Patrol</li>
+      </ol>
+    </div>
+
+    <div class="a-button">A</div>
+  </div>
+
 </div>
-
-<footer>
-  Images hosted from this repository via <a href="https://www.jsdelivr.com/" target="_blank" rel="noopener">jsDelivr</a>.
-</footer>
-
 </body>
 </html>
