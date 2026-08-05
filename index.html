@@ -149,6 +149,20 @@
   .keys-box h4 { font-size: 11.5px; margin: 0 0 6px; color: #2a1f08; font-weight: 800; }
   .keys-box ol { margin: 0; padding-left: 16px; font-size: 10px; color: #3a2c0a; line-height: 1.6; }
 
+  .keys-total {
+    margin-top: 10px;
+    padding-top: 8px;
+    border-top: 1px solid rgba(42,31,8,0.2);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 10.5px;
+    color: #2a1f08;
+    font-weight: 700;
+  }
+  .keys-total .keys-total-pct { color: #4a3a12; }
+  .keys-total .keys-total-pct.complete { color: #15803d; }
+
   .a-button {
     position: absolute; bottom: 16px; right: 16px;
     width: 40px; height: 40px; border-radius: 50%;
@@ -305,6 +319,10 @@
         <li>Browse the full gallery, Kingdom by Kingdom</li>
         <li>Check live testing status on Skybox Patrol</li>
       </ol>
+      <div class="keys-total" id="hubTotalProgress">
+        <span>Total</span>
+        <span class="keys-total-pct">Loading...</span>
+      </div>
     </div>
 
     <div class="a-button">A</div>
@@ -347,6 +365,63 @@
     <p class="credits-sign">Sincerly Onijuiku_</p>
   </div>
 </div>
+
+<script type="module">
+  // Live overall testing progress, shown under "Three Ways In" - same
+  // public data and math as the "All Kingdoms Progress" total on the
+  // Skybox Patrol tab (no auth needed, statuses are public-read).
+  import("https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js").then(async ({ initializeApp }) => {
+    const { getFirestore, collection, getDocs } = await import("https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js");
+
+    const totalEl = document.querySelector('#hubTotalProgress .keys-total-pct');
+
+    try {
+      const firebaseConfig = {
+        apiKey: "AIzaSyAzJhU7wI1iFPEExIgCD-DpZ8sKljtH7Yk",
+        authDomain: "smo-skybox-testing.firebaseapp.com",
+        projectId: "smo-skybox-testing",
+        storageBucket: "smo-skybox-testing.firebasestorage.app",
+        messagingSenderId: "604114241784",
+        appId: "1:604114241784:web:591528df76f683a843530d"
+      };
+
+      const app = initializeApp(firebaseConfig);
+      const db = getFirestore(app);
+
+      const res = await fetch('backend-test/kingdoms-config.json');
+      const config = await res.json();
+      const { kingdoms, skyboxes } = config;
+
+      let grandFilled = 0;
+      let grandTotal = 0;
+
+      for (const kingdom of kingdoms) {
+        const snapshot = await getDocs(collection(db, kingdom.slug));
+        const totalCells = kingdom.subareas.length * skyboxes.length;
+        let filled = 0;
+
+        snapshot.forEach(docSnap => {
+          const statuses = docSnap.data().statuses || {};
+          skyboxes.forEach(sb => {
+            if ((statuses[sb] || "").trim() !== "") filled++;
+          });
+        });
+
+        grandFilled += filled;
+        grandTotal += totalCells;
+      }
+
+      const grandPct = grandTotal > 0 ? (grandFilled / grandTotal) * 100 : 0;
+      totalEl.textContent = `${grandFilled} / ${grandTotal} (${grandPct.toFixed(2)}%)`;
+      if (grandFilled === grandTotal) totalEl.classList.add('complete');
+    } catch (err) {
+      totalEl.textContent = "Unavailable";
+    }
+  }).catch(() => {
+    const totalEl = document.querySelector('#hubTotalProgress .keys-total-pct');
+    if (totalEl) totalEl.textContent = "Unavailable";
+  });
+</script>
 
 <script type="module">
   // Flip to true for the actual public reveal.
