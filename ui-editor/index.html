@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UI Editor - Theme Gallery</title>
+<style>
+  /* ===================== BASE / STRUCTURE =====================
+     Layout mechanics (scrolling, sticky column, spacing rhythm) stay
+     constant across every theme below - only visual treatment (color,
+     border, radius, shape) changes per theme. This file is a mockup
+     playground: sample data only, nothing here reads or writes Firestore. */
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    padding: 24px;
+    background-color: #121212;
+    color: #e6e6e6;
+  }
+
+  .back-link {
+    display: inline-block;
+    color: #8ab4f8;
+    text-decoration: none;
+    font-size: 13px;
+    margin-bottom: 10px;
+  }
+
+  .back-link:hover { text-decoration: underline; }
+
+  h1 { margin: 0 0 4px; font-size: 1.4rem; }
+  p.subtitle { margin: 0 0 20px; font-size: 13px; color: #999; }
+
+  .theme-picker {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+
+  .theme-btn {
+    padding: 8px 14px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid #3f4147;
+    background-color: #2b2d31;
+    color: #fff;
+  }
+
+  .theme-btn:hover { border-color: #5865F2; }
+  .theme-btn.active { outline: 2px solid #5865F2; outline-offset: 1px; }
+
+  .theme-desc {
+    font-size: 12.5px;
+    color: #999;
+    margin-bottom: 20px;
+    min-height: 16px;
+  }
+
+  .tab-bar {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    padding-bottom: 8px;
+    margin-bottom: 12px;
+  }
+
+  .tab-btn {
+    padding: 8px 14px;
+    border-radius: 6px;
+    font-size: 13px;
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+    border: 1px solid #333;
+    background-color: #1e1f22;
+    color: #aaa;
+  }
+
+  .tab-btn.active { background-color: #5865F2; color: #fff; border-color: #5865F2; }
+
+  .table-scroll-wrapper { overflow-x: auto; }
+  .table-scroll-wrapper::-webkit-scrollbar { height: 12px; }
+  .table-scroll-wrapper::-webkit-scrollbar-track { background: #1a1a1a; }
+  .table-scroll-wrapper::-webkit-scrollbar-thumb { background-color: #3d3d3d; border-radius: 6px; }
+
+  table { border-collapse: separate; width: max-content; }
+  th, td { padding: 10px 12px; text-align: left; font-size: 13px; white-space: nowrap; }
+  th:first-child, td:first-child { position: sticky; left: 0; z-index: 1; }
+
+  .status-pill { display: inline-block; padding: 4px 12px; font-size: 12px; font-weight: 600; }
+
+  /* ===================== THEME 1: Card Rows (current production theme) ===================== */
+  body[data-theme="cardrows"] { background: #121212; color: #e6e6e6; }
+  body[data-theme="cardrows"] table { border-spacing: 0 8px; }
+  body[data-theme="cardrows"] th, body[data-theme="cardrows"] td { padding: 13px 16px; }
+  body[data-theme="cardrows"] th { color: #a3e6be; font-weight: 700; font-size: 11px; letter-spacing: .04em; text-transform: uppercase; background-color: #121212; }
+  body[data-theme="cardrows"] tbody tr td { background-color: #1c1d21; }
+  body[data-theme="cardrows"] tbody tr td:first-child { border-radius: 10px 0 0 10px; font-weight: 600; }
+  body[data-theme="cardrows"] tbody tr td:last-child { border-radius: 0 10px 10px 0; }
+  body[data-theme="cardrows"] tbody tr:hover td { background-color: #24262c; }
+  body[data-theme="cardrows"] th:first-child { background-color: #121212; }
+  body[data-theme="cardrows"] .status-pill { border-radius: 7px; }
+  body[data-theme="cardrows"] .status-good { background-color: #15803d; }
+  body[data-theme="cardrows"] .status-avoid { background-color: #c2410c; }
+  body[data-theme="cardrows"] .status-lags { background-color: #b91c1c; }
+  body[data-theme="cardrows"] .status-dark { background-color: #6d28d9; }
+  body[data-theme="cardrows"] .status-bright { background-color: #92720a; }
+  body[data-theme="cardrows"] .status-foggy { background-color: #0e7490; }
+  body[data-theme="cardrows"] .status-uncertain { background-color: #e5e7eb; color: #18181b; }
+  body[data-theme="cardrows"] .status-neutral { background-color: #2b2d31; color: #888; }
+
+  /* ===================== THEME 2: Borderless Floating Chips ===================== */
+  body[data-theme="borderless"] { background: #121212; color: #e6e6e6; }
+  body[data-theme="borderless"] .table-scroll-wrapper { border-radius: 14px; background: #17181a; box-shadow: 0 12px 30px rgba(0,0,0,.35); padding: 4px; }
+  body[data-theme="borderless"] th, body[data-theme="borderless"] td { padding: 14px 16px; }
+  body[data-theme="borderless"] th { background: #17181a; color: #a3e6be; font-weight: 600; position: relative; padding-bottom: 16px; }
+  body[data-theme="borderless"] th::after { content: ""; position: absolute; left: 16px; right: 16px; bottom: 6px; height: 3px; border-radius: 3px; background: linear-gradient(90deg, #5865F2, #17c964 60%, transparent); opacity: .55; }
+  body[data-theme="borderless"] th:first-child, body[data-theme="borderless"] td:first-child { background: #17181a; }
+  body[data-theme="borderless"] tbody tr td { background: #17181a; }
+  body[data-theme="borderless"] tbody tr:nth-child(even) td { background: #1b1c1f; }
+  body[data-theme="borderless"] tbody tr:nth-child(even) td:first-child { background: #1b1c1f; }
+  body[data-theme="borderless"] tbody tr:hover td { background: #23252b; }
+  body[data-theme="borderless"] .status-pill { border-radius: 8px; }
+  body[data-theme="borderless"] .status-good { background-color: #15803d; }
+  body[data-theme="borderless"] .status-avoid { background-color: #c2410c; }
+  body[data-theme="borderless"] .status-lags { background-color: #b91c1c; }
+  body[data-theme="borderless"] .status-dark { background-color: #6d28d9; }
+  body[data-theme="borderless"] .status-bright { background-color: #92720a; }
+  body[data-theme="borderless"] .status-foggy { background-color: #0e7490; }
+  body[data-theme="borderless"] .status-uncertain { background-color: #e5e7eb; color: #18181b; }
+  body[data-theme="borderless"] .status-neutral { background-color: #232428; color: #666; }
+
+  /* ===================== THEME 3: Dashboard Heatmap ===================== */
+  body[data-theme="heatmap"] { background: #121212; color: #e6e6e6; }
+  body[data-theme="heatmap"] .table-scroll-wrapper { border: 1px solid #26272b; border-radius: 10px; }
+  body[data-theme="heatmap"] th, body[data-theme="heatmap"] td { border-bottom: 1px solid #1c1d20; padding: 11px 14px; }
+  body[data-theme="heatmap"] th { background: #141517; color: #a3e6be; }
+  body[data-theme="heatmap"] th:first-child, body[data-theme="heatmap"] td:first-child { background: #141517; border-right: 1px solid #26272b; }
+  body[data-theme="heatmap"] td[data-status="good"] { background: rgba(21,128,61,0.16); border-left: 3px solid #15803d; }
+  body[data-theme="heatmap"] td[data-status="avoid"] { background: rgba(194,65,12,0.16); border-left: 3px solid #c2410c; }
+  body[data-theme="heatmap"] td[data-status="lags"] { background: rgba(185,28,28,0.16); border-left: 3px solid #b91c1c; }
+  body[data-theme="heatmap"] td[data-status="dark"] { background: rgba(109,40,217,0.16); border-left: 3px solid #6d28d9; }
+  body[data-theme="heatmap"] td[data-status="bright"] { background: rgba(146,114,10,0.20); border-left: 3px solid #92720a; }
+  body[data-theme="heatmap"] td[data-status="foggy"] { background: rgba(14,116,144,0.18); border-left: 3px solid #0e7490; }
+  body[data-theme="heatmap"] td[data-status="uncertain"] { background: rgba(229,231,235,0.10); border-left: 3px solid #e5e7eb; }
+  body[data-theme="heatmap"] .status-pill { background: none !important; padding: 0; font-weight: 700; }
+  body[data-theme="heatmap"] td[data-status="good"] .status-pill { color: #4ade80; }
+  body[data-theme="heatmap"] td[data-status="avoid"] .status-pill { color: #fb923c; }
+  body[data-theme="heatmap"] td[data-status="lags"] .status-pill { color: #f87171; }
+  body[data-theme="heatmap"] td[data-status="dark"] .status-pill { color: #c4b5fd; }
+  body[data-theme="heatmap"] td[data-status="bright"] .status-pill { color: #fbe38e; }
+  body[data-theme="heatmap"] td[data-status="foggy"] .status-pill { color: #67e8f9; }
+  body[data-theme="heatmap"] td[data-status="uncertain"] .status-pill { color: #f4f4f5; }
+  body[data-theme="heatmap"] td[data-status="neutral"] .status-pill { color: #555; }
+
+  /* ===================== THEME 4: Bold Mosaic Tiles ===================== */
+  body[data-theme="mosaic"] { background: #121212; color: #e6e6e6; }
+  body[data-theme="mosaic"] table { border-spacing: 6px; }
+  body[data-theme="mosaic"] th, body[data-theme="mosaic"] td { padding: 0; }
+  body[data-theme="mosaic"] th { background: transparent; color: #7c8290; font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; font-weight: 700; padding: 0 10px 10px; }
+  body[data-theme="mosaic"] td:first-child { background: transparent; color: #e6e6e6; font-weight: 700; padding: 14px 16px; font-size: 13px; }
+  body[data-theme="mosaic"] td:not(:first-child) { border-radius: 10px; text-align: center; }
+  body[data-theme="mosaic"] .status-pill { width: 100%; text-align: center; border-radius: 10px; font-family: 'Courier New', monospace; font-weight: 700; font-size: 11.5px; padding: 16px 10px; }
+  body[data-theme="mosaic"] .status-good { background-color: #1c8a4a; }
+  body[data-theme="mosaic"] .status-avoid { background-color: #b5540f; }
+  body[data-theme="mosaic"] .status-lags { background-color: #b23a3a; }
+  body[data-theme="mosaic"] .status-dark { background-color: #6b21a8; }
+  body[data-theme="mosaic"] .status-bright { background-color: #a1720a; }
+  body[data-theme="mosaic"] .status-foggy { background-color: #0f7a94; }
+  body[data-theme="mosaic"] .status-uncertain { background-color: #e5e7eb; color: #18181b; }
+  body[data-theme="mosaic"] .status-neutral { background-color: #24252a; color: #666; }
+
+  /* ===================== THEME 5: Minimal Monochrome + Status Dots ===================== */
+  body[data-theme="minimal"] { background: #121212; color: #e6e6e6; }
+  body[data-theme="minimal"] .table-scroll-wrapper { border: 1px solid #232428; border-radius: 10px; background: #151619; }
+  body[data-theme="minimal"] th, body[data-theme="minimal"] td { border-bottom: 1px solid #1e1f23; padding: 12px 16px; }
+  body[data-theme="minimal"] th { background: #151619; color: #6b7078; font-size: 10.5px; letter-spacing: .07em; text-transform: uppercase; font-weight: 700; }
+  body[data-theme="minimal"] th:first-child, body[data-theme="minimal"] td:first-child { background: #151619; }
+  body[data-theme="minimal"] tbody tr:hover td { background: #1a1b1f; }
+  body[data-theme="minimal"] .status-pill { background: none !important; padding: 4px 20px 4px 18px; font-weight: 500; font-size: 12.5px; color: #b8bcc4; position: relative; }
+  body[data-theme="minimal"] .status-pill::before { content: ""; position: absolute; left: 0; top: 50%; transform: translateY(-50%); width: 7px; height: 7px; border-radius: 50%; background: #4a4d54; }
+  body[data-theme="minimal"] td[data-status="good"] .status-pill::before { background: #17c964; }
+  body[data-theme="minimal"] td[data-status="avoid"] .status-pill::before { background: #fb923c; }
+  body[data-theme="minimal"] td[data-status="lags"] .status-pill::before { background: #f87171; }
+  body[data-theme="minimal"] td[data-status="dark"] .status-pill::before { background: #a78bfa; }
+  body[data-theme="minimal"] td[data-status="bright"] .status-pill::before { background: #fbe38e; }
+  body[data-theme="minimal"] td[data-status="foggy"] .status-pill::before { background: #67e8f9; }
+  body[data-theme="minimal"] td[data-status="uncertain"] .status-pill::before { background: #f4f4f5; }
+  body[data-theme="minimal"] td[data-status="lags"] .status-pill { color: #f87171; font-weight: 600; }
+
+  /* ===================== THEME 6: Glassmorphism / Glow ===================== */
+  body[data-theme="glass"] { background: radial-gradient(1200px 600px at 15% 0%, #1a1f3a 0%, #121212 55%), #121212; color: #e6e6e6; }
+  body[data-theme="glass"] .table-scroll-wrapper { border: 1px solid rgba(255,255,255,.08); border-radius: 16px; background: rgba(255,255,255,.03); backdrop-filter: blur(6px); box-shadow: 0 20px 50px rgba(0,0,0,.45); }
+  body[data-theme="glass"] th, body[data-theme="glass"] td { border-bottom: 1px solid rgba(255,255,255,.05); padding: 13px 16px; }
+  body[data-theme="glass"] th { background: transparent; color: #9fb4ff; }
+  body[data-theme="glass"] th:first-child, body[data-theme="glass"] td:first-child { background: rgba(255,255,255,.02); backdrop-filter: blur(6px); }
+  body[data-theme="glass"] tbody tr:hover td { background: rgba(255,255,255,.04); }
+  body[data-theme="glass"] .status-pill { border: 1px solid transparent; border-radius: 10px; }
+  body[data-theme="glass"] .status-good { background-color: rgba(23,201,100,.16); color: #6ee7a0; box-shadow: 0 0 14px rgba(23,201,100,.35); border-color: rgba(23,201,100,.4); }
+  body[data-theme="glass"] .status-avoid { background-color: rgba(251,146,60,.16); color: #fdba74; box-shadow: 0 0 14px rgba(251,146,60,.3); border-color: rgba(251,146,60,.4); }
+  body[data-theme="glass"] .status-lags { background-color: rgba(248,113,113,.16); color: #fca5a5; box-shadow: 0 0 14px rgba(248,113,113,.3); border-color: rgba(248,113,113,.4); }
+  body[data-theme="glass"] .status-dark { background-color: rgba(167,139,250,.16); color: #c4b5fd; box-shadow: 0 0 14px rgba(167,139,250,.3); border-color: rgba(167,139,250,.4); }
+  body[data-theme="glass"] .status-bright { background-color: rgba(251,227,142,.16); color: #fbe38e; box-shadow: 0 0 14px rgba(251,227,142,.28); border-color: rgba(251,227,142,.4); }
+  body[data-theme="glass"] .status-foggy { background-color: rgba(103,232,249,.16); color: #67e8f9; box-shadow: 0 0 14px rgba(103,232,249,.28); border-color: rgba(103,232,249,.4); }
+  body[data-theme="glass"] .status-uncertain { background-color: rgba(255,255,255,.10); color: #f4f4f5; border-color: rgba(255,255,255,.25); }
+  body[data-theme="glass"] .status-neutral { background-color: rgba(255,255,255,.04); color: #777; }
+
+  /* ===================== THEME 7: Neo Brutalist ===================== */
+  body[data-theme="brutalist"] { background: #0d0d0d; color: #f5f5f5; font-family: 'Courier New', monospace; }
+  body[data-theme="brutalist"] h1 { text-transform: uppercase; letter-spacing: .05em; }
+  body[data-theme="brutalist"] .theme-btn { border-radius: 0; border: 2px solid #f5f5f5; font-family: 'Courier New', monospace; }
+  body[data-theme="brutalist"] .tab-btn { border-radius: 0; border: 2px solid #444; font-family: 'Courier New', monospace; }
+  body[data-theme="brutalist"] .tab-btn.active { border-color: #f5f5f5; background: #f5f5f5; color: #0d0d0d; }
+  body[data-theme="brutalist"] .table-scroll-wrapper { border: 3px solid #f5f5f5; }
+  body[data-theme="brutalist"] th, body[data-theme="brutalist"] td { border: 2px solid #333; padding: 10px 14px; }
+  body[data-theme="brutalist"] th { background: #f5f5f5; color: #0d0d0d; font-weight: 900; text-transform: uppercase; }
+  body[data-theme="brutalist"] th:first-child, body[data-theme="brutalist"] td:first-child { background: #0d0d0d; border-right: 3px solid #f5f5f5; }
+  body[data-theme="brutalist"] .status-pill { border-radius: 0; border: 2px solid #0d0d0d; font-weight: 900; text-transform: uppercase; box-shadow: 3px 3px 0 #0d0d0d; }
+  body[data-theme="brutalist"] .status-good { background-color: #39ff6a; color: #0d0d0d; }
+  body[data-theme="brutalist"] .status-avoid { background-color: #ff8a1e; color: #0d0d0d; }
+  body[data-theme="brutalist"] .status-lags { background-color: #ff3b3b; color: #0d0d0d; }
+  body[data-theme="brutalist"] .status-dark { background-color: #b388ff; color: #0d0d0d; }
+  body[data-theme="brutalist"] .status-bright { background-color: #ffe14d; color: #0d0d0d; }
+  body[data-theme="brutalist"] .status-foggy { background-color: #4dd8ff; color: #0d0d0d; }
+  body[data-theme="brutalist"] .status-uncertain { background-color: #f5f5f5; color: #0d0d0d; }
+  body[data-theme="brutalist"] .status-neutral { background-color: #333; color: #888; border-color: #333; box-shadow: none; }
+
+  /* ===================== THEME 8: Pastel Soft ===================== */
+  body[data-theme="pastel"] { background: #1c1a22; color: #e9e4f0; }
+  body[data-theme="pastel"] .theme-btn { border-radius: 10px; }
+  body[data-theme="pastel"] .tab-btn { border-radius: 10px; }
+  body[data-theme="pastel"] .tab-btn.active { background: #8c7ae6; border-color: #8c7ae6; }
+  body[data-theme="pastel"] .table-scroll-wrapper { border-radius: 18px; background: #242030; padding: 6px; box-shadow: 0 10px 26px rgba(0,0,0,.3); }
+  body[data-theme="pastel"] th, body[data-theme="pastel"] td { padding: 12px 16px; }
+  body[data-theme="pastel"] th { background: #242030; color: #c9b8f0; font-weight: 600; }
+  body[data-theme="pastel"] th:first-child, body[data-theme="pastel"] td:first-child { background: #242030; }
+  body[data-theme="pastel"] tbody tr:nth-child(even) td { background: #29253590; }
+  body[data-theme="pastel"] tbody tr:hover td { background: #322c42; }
+  body[data-theme="pastel"] .status-pill { border-radius: 16px; font-weight: 600; }
+  body[data-theme="pastel"] .status-good { background-color: #b8f0cf; color: #1c5c3a; }
+  body[data-theme="pastel"] .status-avoid { background-color: #ffd9b3; color: #7a4210; }
+  body[data-theme="pastel"] .status-lags { background-color: #ffc2c2; color: #7a1f1f; }
+  body[data-theme="pastel"] .status-dark { background-color: #dcc9fb; color: #4a2c82; }
+  body[data-theme="pastel"] .status-bright { background-color: #fff2b3; color: #7a5f10; }
+  body[data-theme="pastel"] .status-foggy { background-color: #c2eef7; color: #145c6b; }
+  body[data-theme="pastel"] .status-uncertain { background-color: #f0eef5; color: #4a4658; }
+  body[data-theme="pastel"] .status-neutral { background-color: #322c42; color: #837c95; }
+
+  /* ===================== THEME 9: Light Clean ===================== */
+  body[data-theme="light"] { background: #f7f7f9; color: #1a1a1e; }
+  body[data-theme="light"] .theme-btn { background: #fff; border-color: #d7d7de; color: #1a1a1e; }
+  body[data-theme="light"] .theme-desc { color: #666; }
+  body[data-theme="light"] .tab-btn { background: #fff; border-color: #d7d7de; color: #555; }
+  body[data-theme="light"] .tab-btn.active { background: #5865F2; border-color: #5865F2; color: #fff; }
+  body[data-theme="light"] .table-scroll-wrapper { border: 1px solid #e2e2e8; border-radius: 10px; background: #fff; }
+  body[data-theme="light"] th, body[data-theme="light"] td { border-bottom: 1px solid #eeeef2; padding: 11px 14px; }
+  body[data-theme="light"] th { background: #fafafc; color: #444; font-weight: 700; font-size: 12px; }
+  body[data-theme="light"] th:first-child, body[data-theme="light"] td:first-child { background: #fff; border-right: 1px solid #eeeef2; }
+  body[data-theme="light"] tbody tr:hover td { background: #f5f5fa; }
+  body[data-theme="light"] .status-pill { border-radius: 7px; font-weight: 600; border: 1px solid transparent; }
+  body[data-theme="light"] .status-good { background-color: #dcfce7; color: #166534; border-color: #bbf7d0; }
+  body[data-theme="light"] .status-avoid { background-color: #ffedd5; color: #9a3412; border-color: #fed7aa; }
+  body[data-theme="light"] .status-lags { background-color: #fee2e2; color: #991b1b; border-color: #fecaca; }
+  body[data-theme="light"] .status-dark { background-color: #ede9fe; color: #5b21b6; border-color: #ddd6fe; }
+  body[data-theme="light"] .status-bright { background-color: #fef9c3; color: #854d0e; border-color: #fef08a; }
+  body[data-theme="light"] .status-foggy { background-color: #cffafe; color: #155e75; border-color: #a5f3fc; }
+  body[data-theme="light"] .status-uncertain { background-color: #f4f4f5; color: #3f3f46; border-color: #e4e4e7; }
+  body[data-theme="light"] .status-neutral { background-color: #fafafa; color: #a1a1aa; border-color: #f0f0f0; }
+</style>
+</head>
+<body data-theme="cardrows">
+
+<a class="back-link" href="../">&larr; Back to Hub</a>
+<h1>UI Editor</h1>
+<p class="subtitle">Theme gallery for Skybox Patrol - sample data only, nothing here is live or saved. Pick a theme below to preview it.</p>
+
+<div class="theme-picker" id="themePicker"></div>
+<div class="theme-desc" id="themeDesc"></div>
+
+<div class="tab-bar" id="tabBar"></div>
+
+<div class="table-scroll-wrapper">
+  <table id="mainTable">
+    <thead id="mainTableHead"></thead>
+    <tbody id="mainTableBody"></tbody>
+  </table>
+</div>
+
+<script type="module">
+  const THEMES = [
+    { id: 'cardrows',   name: 'Card Rows (current)',  desc: 'The theme currently live on Skybox Patrol - separated row cards, no grid lines, uppercase header.' },
+    { id: 'borderless', name: 'Borderless Chips',      desc: 'No grid lines at all, soft zebra striping, bigger rounded chips, gradient header underline.' },
+    { id: 'heatmap',    name: 'Dashboard Heatmap',     desc: 'Whole cell tinted by status with a left accent bar, text-only labels - reads like a monitoring dashboard.' },
+    { id: 'mosaic',     name: 'Bold Mosaic Tiles',     desc: 'Solid saturated tiles with big gaps between them, monospace labels - a colorful puzzle-grid feel.' },
+    { id: 'minimal',    name: 'Minimal + Status Dots', desc: 'Uniform dark surface, a small colored dot is the only color - quiet admin-table feel.' },
+    { id: 'glass',      name: 'Glassmorphism / Glow',  desc: 'Frosted glass panel on a soft gradient backdrop with neon glow around each pill.' },
+    { id: 'brutalist',  name: 'Neo Brutalist',         desc: 'Thick borders, hard corners, flat saturated colors, monospace, offset drop shadows.' },
+    { id: 'pastel',     name: 'Pastel Soft',           desc: 'Lighter pastel-toned dark theme, rounded-xl pills, gentle shadows.' },
+    { id: 'light',      name: 'Light Clean',           desc: 'Full light-mode alternative - white surface, pale colored tag-style pills.' },
+  ];
+
+  const STATUS_OPTIONS = ["", "Good to Use", "Looks Bad - Don't Use", "Lags Kingdom", "Good but Dark", "Good but Bright", "Good but Foggy", "Uncertain"];
+
+  function statusClass(value) {
+    if (value === "Good to Use") return "status-good";
+    if (value === "Looks Bad - Don't Use") return "status-avoid";
+    if (value === "Lags Kingdom") return "status-lags";
+    if (value === "Good but Dark") return "status-dark";
+    if (value === "Good but Bright") return "status-bright";
+    if (value === "Good but Foggy") return "status-foggy";
+    if (value === "Uncertain") return "status-uncertain";
+    return "status-neutral";
+  }
+
+  function statusKey(value) {
+    return statusClass(value).replace('status-', '');
+  }
+
+  // Deterministic fake data - same "random" status every time for a given
+  // subarea+skybox pair, so the table doesn't jitter between theme switches.
+  function seededRand(seed) {
+    const x = Math.sin(seed) * 10000;
+    return x - Math.floor(x);
+  }
+  function fakeStatusFor(slug, subarea, sb) {
+    const seed = (slug + subarea + sb).split('').reduce((a, c) => a + c.charCodeAt(0), 0);
+    const pool = ["Good to Use", "Good to Use", "Good to Use", "Good to Use", "Looks Bad - Don't Use", "Lags Kingdom", "Good but Dark", "Good but Bright", "Good but Foggy", "Uncertain", ""];
+    return pool[Math.floor(seededRand(seed) * pool.length)];
+  }
+
+  let KINGDOMS = [];
+  let SKYBOXES = [];
+  let activeSlug = null;
+
+  async function init() {
+    const res = await fetch('../backend-test/kingdoms-config.json');
+    const config = await res.json();
+    KINGDOMS = config.kingdoms;
+    SKYBOXES = config.skyboxes;
+    buildTabs();
+    switchKingdom(KINGDOMS[0].slug);
+    buildThemePicker();
+  }
+
+  function buildTabs() {
+    const bar = document.getElementById('tabBar');
+    bar.innerHTML = '';
+    KINGDOMS.forEach(k => {
+      const btn = document.createElement('button');
+      btn.className = 'tab-btn';
+      btn.textContent = k.label;
+      btn.dataset.slug = k.slug;
+      btn.addEventListener('click', () => switchKingdom(k.slug));
+      bar.appendChild(btn);
+    });
+  }
+
+  function switchKingdom(slug) {
+    activeSlug = slug;
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.slug === slug));
+    renderTable();
+  }
+
+  function renderTable() {
+    const kingdom = KINGDOMS.find(k => k.slug === activeSlug);
+    const thead = document.getElementById('mainTableHead');
+    const tbody = document.getElementById('mainTableBody');
+
+    let headHtml = '<tr><th>Subarea</th>';
+    SKYBOXES.forEach(sb => { headHtml += `<th>${sb}</th>`; });
+    headHtml += '</tr>';
+    thead.innerHTML = headHtml;
+
+    tbody.innerHTML = '';
+    kingdom.subareas.forEach(subarea => {
+      const tr = document.createElement('tr');
+      const nameTd = document.createElement('td');
+      nameTd.textContent = subarea;
+      nameTd.style.fontWeight = '600';
+      tr.appendChild(nameTd);
+
+      SKYBOXES.forEach(sb => {
+        const value = fakeStatusFor(activeSlug, subarea, sb);
+        const td = document.createElement('td');
+        td.dataset.status = statusKey(value);
+        const pill = document.createElement('span');
+        pill.className = 'status-pill ' + statusClass(value);
+        pill.textContent = value === "" ? "-- Not set --" : value;
+        td.appendChild(pill);
+        tr.appendChild(td);
+      });
+
+      tbody.appendChild(tr);
+    });
+  }
+
+  function buildThemePicker() {
+    const bar = document.getElementById('themePicker');
+    bar.innerHTML = '';
+    THEMES.forEach(t => {
+      const btn = document.createElement('button');
+      btn.className = 'theme-btn';
+      btn.textContent = t.name;
+      btn.dataset.id = t.id;
+      btn.addEventListener('click', () => setTheme(t.id));
+      bar.appendChild(btn);
+    });
+    setTheme(document.body.dataset.theme);
+  }
+
+  function setTheme(id) {
+    document.body.dataset.theme = id;
+    document.querySelectorAll('.theme-btn').forEach(b => b.classList.toggle('active', b.dataset.id === id));
+    document.getElementById('themeDesc').textContent = THEMES.find(t => t.id === id).desc;
+  }
+
+  init();
+</script>
+
+</body>
+</html>
