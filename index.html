@@ -349,10 +349,14 @@
 </div>
 
 <script type="module">
-  // Flip to true for the actual public reveal - until then the button only
-  // shows up for emails listed in the authorizedEditors collection (the
-  // same allowlist the Skybox Patrol tab uses), so testers can't see it.
+  // Flip to true for the actual public reveal.
   const CREDITS_REVEALED = false;
+
+  // Temporarily disabled: authorizedEditors holds every tester with edit
+  // access (~10 people), not just the owner, so gating on "is an editor"
+  // would show this to the whole testing team instead of just one person.
+  // Re-enable once the check below is narrowed to a specific email.
+  const CREDITS_AUTH_GATE_ENABLED = false;
 
   const creditsButton = document.getElementById('creditsButton');
   const creditsOverlay = document.getElementById('creditsOverlay');
@@ -366,7 +370,7 @@
 
   if (CREDITS_REVEALED) {
     creditsButton.style.display = 'flex';
-  } else {
+  } else if (CREDITS_AUTH_GATE_ENABLED) {
     // No sign-in UI here on purpose - this only checks whether a session
     // from the Skybox Patrol tab (same Firebase project/origin) is already
     // signed in as an allowed editor, without prompting testers to log in.
