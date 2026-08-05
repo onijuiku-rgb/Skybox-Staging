@@ -368,13 +368,11 @@
 
 <script>
   // Swaps the hero photo + 2 thumbnails for 3 random skyboxes on every
-  // load, so the top-left photos aren't the same every visit. Cap World
-  // Home Stage is excluded from the pool since it represents the hub
-  // itself, not a random pick.
+  // load, so the top-left photos aren't the same every visit.
   fetch('skybox/skybox.json')
     .then(res => res.json())
     .then(entries => {
-      const pool = entries.filter(e => e.name !== 'CapWorldHomeStage');
+      const pool = entries.slice();
       for (let i = pool.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [pool[i], pool[j]] = [pool[j], pool[i]];
@@ -453,11 +451,10 @@
   // Flip to true for the actual public reveal.
   const CREDITS_REVEALED = false;
 
-  // Temporarily disabled: authorizedEditors holds every tester with edit
-  // access (~10 people), not just the owner, so gating on "is an editor"
-  // would show this to the whole testing team instead of just one person.
-  // Re-enable once the check below is narrowed to a specific email.
-  const CREDITS_AUTH_GATE_ENABLED = false;
+  // Shows the credits button only to signed-in admins (the "admins"
+  // Firestore collection - a separate, smaller allowlist than
+  // authorizedEditors, which every tester with edit access is on).
+  const CREDITS_AUTH_GATE_ENABLED = true;
 
   const creditsButton = document.getElementById('creditsButton');
   const creditsOverlay = document.getElementById('creditsOverlay');
@@ -474,7 +471,7 @@
   } else if (CREDITS_AUTH_GATE_ENABLED) {
     // No sign-in UI here on purpose - this only checks whether a session
     // from the Skybox Patrol tab (same Firebase project/origin) is already
-    // signed in as an allowed editor, without prompting testers to log in.
+    // signed in as an admin, without prompting testers to log in.
     import("https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js").then(async ({ initializeApp }) => {
       const { getFirestore, doc, getDoc } = await import("https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js");
       const { getAuth, onAuthStateChanged } = await import("https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js");
@@ -494,8 +491,8 @@
 
       onAuthStateChanged(auth, async (user) => {
         if (!user) return;
-        const editorDoc = await getDoc(doc(db, 'authorizedEditors', user.email));
-        if (editorDoc.exists()) creditsButton.style.display = 'flex';
+        const adminDoc = await getDoc(doc(db, 'admins', user.email));
+        if (adminDoc.exists()) creditsButton.style.display = 'flex';
       });
     });
   }
