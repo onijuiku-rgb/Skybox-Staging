@@ -348,22 +348,52 @@
   </div>
 </div>
 
-<script>
-  // Flip to true when it's time to surprise the testers with the credits button.
+<script type="module">
+  // Flip to true for the actual public reveal - until then the button only
+  // shows up for emails listed in the authorizedEditors collection (the
+  // same allowlist the Skybox Patrol tab uses), so testers can't see it.
   const CREDITS_REVEALED = false;
 
   const creditsButton = document.getElementById('creditsButton');
   const creditsOverlay = document.getElementById('creditsOverlay');
   const creditsClose = document.getElementById('creditsClose');
 
-  if (CREDITS_REVEALED) {
-    creditsButton.style.display = 'flex';
-  }
   creditsButton.addEventListener('click', () => creditsOverlay.classList.add('open'));
   creditsClose.addEventListener('click', () => creditsOverlay.classList.remove('open'));
   creditsOverlay.addEventListener('click', (e) => {
     if (e.target === creditsOverlay) creditsOverlay.classList.remove('open');
   });
+
+  if (CREDITS_REVEALED) {
+    creditsButton.style.display = 'flex';
+  } else {
+    // No sign-in UI here on purpose - this only checks whether a session
+    // from the Skybox Patrol tab (same Firebase project/origin) is already
+    // signed in as an allowed editor, without prompting testers to log in.
+    import("https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js").then(async ({ initializeApp }) => {
+      const { getFirestore, doc, getDoc } = await import("https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js");
+      const { getAuth, onAuthStateChanged } = await import("https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js");
+
+      const firebaseConfig = {
+        apiKey: "AIzaSyAzJhU7wI1iFPEExIgCD-DpZ8sKljtH7Yk",
+        authDomain: "smo-skybox-testing.firebaseapp.com",
+        projectId: "smo-skybox-testing",
+        storageBucket: "smo-skybox-testing.firebasestorage.app",
+        messagingSenderId: "604114241784",
+        appId: "1:604114241784:web:591528df76f683a843530d"
+      };
+
+      const app = initializeApp(firebaseConfig);
+      const db = getFirestore(app);
+      const auth = getAuth(app);
+
+      onAuthStateChanged(auth, async (user) => {
+        if (!user) return;
+        const editorDoc = await getDoc(doc(db, 'authorizedEditors', user.email));
+        if (editorDoc.exists()) creditsButton.style.display = 'flex';
+      });
+    });
+  }
 </script>
 </body>
 </html>
