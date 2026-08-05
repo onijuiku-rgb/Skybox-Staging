@@ -1219,22 +1219,22 @@
   // "Randomizer Skybox State Graphic" Slides deck (SVG export) - real
   // artwork, not approximated shapes.
   const KINGDOM_TILES = [
-    { slugs: ['capKingdom'], label: 'Cap', icon: 'cap.png', color: '#eab308' },
-    { slugs: ['cascadeKingdom'], label: 'Cascade', icon: 'cascade.png', color: '#f97316' },
-    { slugs: ['sandKingdom'], label: 'Sand', icon: 'sand.png', color: '#22c55e' },
-    { slugs: ['lakeKingdom'], label: 'Lake', icon: 'lake.png', color: '#ec4899' },
-    { slugs: ['woodedKingdom'], label: 'Wooded', icon: 'wooded.png', color: '#3b82f6' },
-    { slugs: ['cloudKingdom'], label: 'Cloud', icon: 'cloud.png', color: '#60a5fa' },
-    { slugs: ['lostKingdom'], label: 'Lost', icon: 'lost.png', color: '#d946ef' },
-    { slugs: ['metroKingdom'], label: 'Metro', icon: 'metro.png', color: '#c2703d' },
-    { slugs: ['snowKingdom'], label: 'Snow', icon: 'snow.png', color: '#d97706' },
-    { slugs: ['seasideKingdom'], label: 'Seaside', icon: 'seaside.png', color: '#8b5cf6' },
-    { slugs: ['luncheonKingdom'], label: 'Luncheon', icon: 'luncheon.png', color: '#14b8a6' },
-    { slugs: ['ruinedKingdom'], label: 'Ruined', icon: 'ruined.png', color: '#f43f5e' },
-    { slugs: ['bowsersKingdom'], label: "Bowser's", icon: 'bowsers.png', color: '#dc2626' },
-    { slugs: ['moonKingdom'], label: 'Moon', icon: 'moon.png', color: '#9ca3af' },
-    { slugs: ['darkSide', 'darkerSide'], label: 'Dark/Darker', icon: 'darkdarker.png', color: '#fde68a' },
-    { slugs: ['mushroomKingdom'], label: 'Mushroom', icon: 'mushroom.png', color: '#facc15' }
+    { slugs: ['capKingdom'], label: 'Cap', icon: 'cap.png' },
+    { slugs: ['cascadeKingdom'], label: 'Cascade', icon: 'cascade.png' },
+    { slugs: ['sandKingdom'], label: 'Sand', icon: 'sand.png' },
+    { slugs: ['lakeKingdom'], label: 'Lake', icon: 'lake.png' },
+    { slugs: ['woodedKingdom'], label: 'Wooded', icon: 'wooded.png' },
+    { slugs: ['cloudKingdom'], label: 'Cloud', icon: 'cloud.png' },
+    { slugs: ['lostKingdom'], label: 'Lost', icon: 'lost.png' },
+    { slugs: ['metroKingdom'], label: 'Metro', icon: 'metro.png' },
+    { slugs: ['snowKingdom'], label: 'Snow', icon: 'snow.png' },
+    { slugs: ['seasideKingdom'], label: 'Seaside', icon: 'seaside.png' },
+    { slugs: ['luncheonKingdom'], label: 'Luncheon', icon: 'luncheon.png' },
+    { slugs: ['ruinedKingdom'], label: 'Ruined', icon: 'ruined.png' },
+    { slugs: ['bowsersKingdom'], label: "Bowser's", icon: 'bowsers.png' },
+    { slugs: ['moonKingdom'], label: 'Moon', icon: 'moon.png' },
+    { slugs: ['darkSide', 'darkerSide'], label: 'Dark/Darker', icon: 'darkdarker.png' },
+    { slugs: ['mushroomKingdom'], label: 'Mushroom', icon: 'mushroom.png' }
   ];
 
   function pctFor(slug) {
@@ -1318,13 +1318,8 @@
       const badgeCy = rowTop + 42;
       const r = 34;
 
-      ctx.beginPath();
-      ctx.arc(cx, badgeCy, r, 0, Math.PI * 2);
-      ctx.fillStyle = tile.color;
-      ctx.fill();
-      ctx.lineWidth = 2.5;
-      ctx.strokeStyle = 'rgba(0,0,0,0.4)';
-      ctx.stroke();
+      // No badge circle behind the icon - none of the original icons have
+      // one (some, like Cascade or Mushroom, just happen to BE circular).
 
       const iconImg = randomizerImages[tile.icon];
       if (iconImg) {
