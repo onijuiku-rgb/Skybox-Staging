@@ -1116,6 +1116,20 @@
         const lockSnap = await getDoc(doc(db, 'kingdomLocks', context.activeSlug));
         diag.kingdomLocksDoc = { path: `kingdomLocks/${context.activeSlug}`, exists: lockSnap.exists(), data: lockSnap.exists() ? lockSnap.data() : null };
       }
+      if (context.activeSlug && context.subarea) {
+        // The app only ever reads .data().statuses client-side, so a doc
+        // that picked up extra top-level fields somewhere (old migration
+        // script, a manual edit, etc.) would look totally normal in the
+        // UI - but request.resource.data.keys().hasOnly(['statuses']) in
+        // the rules would reject EVERY write to it. Surface the raw keys
+        // to rule this in or out.
+        const targetSnap = await getDoc(doc(db, context.activeSlug, context.subarea));
+        diag.targetDoc = {
+          path: `${context.activeSlug}/${context.subarea}`,
+          exists: targetSnap.exists(),
+          topLevelKeys: targetSnap.exists() ? Object.keys(targetSnap.data()) : null,
+        };
+      }
     } catch (diagErr) {
       diag.diagnosticsError = diagErr.message;
     }
