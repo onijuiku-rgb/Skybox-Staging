@@ -1089,103 +1089,6 @@
   let kingdomLiveListeners = []; // unsubscribe fns for the 17 always-on Randomizer progress listeners
   let kingdomProgressLive = {};  // { slug: { filled, total } }, kept live by those listeners
 
-  // ===================== SAVE-FAILURE DEBUG DUMP =====================
-  // Temporary diagnostic aid for tracking down the "insufficient
-  // permissions" editor bug: on any failed status write, gather everything
-  // relevant to why the security rules might have rejected it and offer it
-  // as a downloadable .json file, so a report can include the real cause
-  // instead of just the generic FirebaseError text.
-  async function downloadSaveDebugInfo(context, err) {
-    const email = currentUser ? currentUser.email : null;
-    const diag = {
-      timestamp: new Date().toISOString(),
-      context,
-      clientFlags: { isEditor, isAdmin },
-      error: { code: err && err.code, message: err && err.message },
-    };
-    try {
-      // JSON.stringify + length catch an invisible/control character in
-      // the email or path segments that would look completely normal when
-      // printed but not compare equal in the rules (this project has hit
-      // exactly this kind of bug before with a stray \x01 in a file).
-      diag.emailRaw = { value: email, jsonStringified: JSON.stringify(email), length: email ? email.length : null };
-      if (context.activeSlug) diag.activeSlugRaw = { jsonStringified: JSON.stringify(context.activeSlug), length: context.activeSlug.length };
-      if (context.subarea) diag.subareaRaw = { jsonStringified: JSON.stringify(context.subarea), length: context.subarea.length };
-      if (currentUser) {
-        // The security rules read request.auth.token.email - the raw ID
-        // token's claims - not currentUser.email off the profile object.
-        // Those are USUALLY the same, but a stale cached token could
-        // differ. Force a refresh so this reflects exactly what a fresh
-        // write would send.
-        const tokenResult = await currentUser.getIdTokenResult(true);
-        diag.idTokenClaims = {
-          email: tokenResult.claims.email,
-          email_verified: tokenResult.claims.email_verified,
-          matchesCurrentUserEmail: tokenResult.claims.email === currentUser.email,
-          issuedAtTime: tokenResult.issuedAtTime,
-          expirationTime: tokenResult.expirationTime,
-        };
-      }
-      if (email) {
-        const editorSnap = await getDoc(doc(db, 'authorizedEditors', email));
-        diag.authorizedEditorsDoc = { path: `authorizedEditors/${email}`, exists: editorSnap.exists(), data: editorSnap.exists() ? editorSnap.data() : null };
-        const adminSnap = await getDoc(doc(db, 'admins', email));
-        diag.adminsDoc = { path: `admins/${email}`, exists: adminSnap.exists(), data: adminSnap.exists() ? adminSnap.data() : null };
-      } else {
-        diag.note = 'currentUser was null at failure time - not signed in?';
-      }
-      if (context.activeSlug) {
-        const lockSnap = await getDoc(doc(db, 'kingdomLocks', context.activeSlug));
-        diag.kingdomLocksDoc = { path: `kingdomLocks/${context.activeSlug}`, exists: lockSnap.exists(), data: lockSnap.exists() ? lockSnap.data() : null };
-      }
-      if (context.activeSlug && context.subarea) {
-        // The app only ever reads .data().statuses client-side, so a doc
-        // that picked up extra top-level fields somewhere (old migration
-        // script, a manual edit, etc.) would look totally normal in the
-        // UI - but request.resource.data.keys().hasOnly(['statuses']) in
-        // the rules would reject EVERY write to it. Surface the raw keys
-        // to rule this in or out.
-        const targetSnap = await getDoc(doc(db, context.activeSlug, context.subarea));
-        diag.targetDoc = {
-          path: `${context.activeSlug}/${context.subarea}`,
-          exists: targetSnap.exists(),
-          topLevelKeys: targetSnap.exists() ? Object.keys(targetSnap.data()) : null,
-        };
-      }
-    } catch (diagErr) {
-      diag.diagnosticsError = diagErr.message;
-    }
-    // A real write to a brand-new scratch document in the same Kingdom
-    // collection, using the exact same payload shape as a normal save.
-    // If this succeeds, the problem is specific to the document/subarea
-    // that just failed; if it ALSO gets denied, it's something about this
-    // user/Kingdom in general (or the rules themselves), not one doc.
-    if (context.activeSlug) {
-      // Firestore reserves doc IDs matching /^__.*__$/ (invalid-argument,
-      // not a rules check) - keep the double underscores out of the ends.
-      const probeId = `zzDebugProbe_${Date.now()}`;
-      try {
-        await setDoc(doc(db, context.activeSlug, probeId), { statuses: { probe: 'debug-test' } }, { merge: true });
-        diag.probeWrite = { path: `${context.activeSlug}/${probeId}`, result: 'SUCCEEDED - a fresh doc in the same collection saved fine' };
-      } catch (probeErr) {
-        diag.probeWrite = { path: `${context.activeSlug}/${probeId}`, result: 'FAILED', code: probeErr.code, message: probeErr.message };
-      }
-    }
-    try {
-      const blob = new Blob([JSON.stringify(diag, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `skybox-save-debug-${Date.now()}.json`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
-    } catch (downloadErr) {
-      console.error('Could not download debug info:', downloadErr, diag);
-    }
-  }
-
   // Filters (shared across all Kingdoms, not reset when switching tabs)
   let hiddenStatuses = new Set(["Good to Use"]); // "Good to Use" hidden by default - the summary table is meant to highlight problems, not everything
   let subareaFilter = "";
@@ -1852,12 +1755,10 @@
                   return;
                 } catch (retryErr) {
                   setStatusLine("Error saving: " + retryErr.message, "error");
-                  downloadSaveDebugInfo({ kind: 'single-cell', activeSlug, subarea, sb, newValue, retriedAfterTokenRefresh: true }, retryErr);
                   return;
                 }
               }
               setStatusLine("Error saving: " + err.message, "error");
-              downloadSaveDebugInfo({ kind: 'single-cell', activeSlug, subarea, sb, newValue }, err);
             }
           });
         });
@@ -1947,11 +1848,9 @@
           setStatusLine(`Applied "${newValue || '(none)'}" to ${cells.length} cell(s). (needed a fresh sign-in token)`, "connected");
         } catch (retryErr) {
           setStatusLine("Error applying bulk status: " + retryErr.message, "error");
-          downloadSaveDebugInfo({ kind: 'bulk-apply', activeSlug, newValue, subareas: Object.keys(bySubarea), cellCount: cells.length, retriedAfterTokenRefresh: true }, retryErr);
         }
       } else {
         setStatusLine("Error applying bulk status: " + err.message, "error");
-        downloadSaveDebugInfo({ kind: 'bulk-apply', activeSlug, newValue, subareas: Object.keys(bySubarea), cellCount: cells.length }, err);
       }
     }
 
