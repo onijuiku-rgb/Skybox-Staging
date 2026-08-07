@@ -1089,6 +1089,51 @@
   let kingdomLiveListeners = []; // unsubscribe fns for the 17 always-on Randomizer progress listeners
   let kingdomProgressLive = {};  // { slug: { filled, total } }, kept live by those listeners
 
+  // ===================== SAVE-FAILURE DEBUG DUMP =====================
+  // Temporary diagnostic aid for tracking down the "insufficient
+  // permissions" editor bug: on any failed status write, gather everything
+  // relevant to why the security rules might have rejected it and offer it
+  // as a downloadable .json file, so a report can include the real cause
+  // instead of just the generic FirebaseError text.
+  async function downloadSaveDebugInfo(context, err) {
+    const email = currentUser ? currentUser.email : null;
+    const diag = {
+      timestamp: new Date().toISOString(),
+      context,
+      clientFlags: { isEditor, isAdmin },
+      error: { code: err && err.code, message: err && err.message },
+    };
+    try {
+      if (email) {
+        const editorSnap = await getDoc(doc(db, 'authorizedEditors', email));
+        diag.authorizedEditorsDoc = { path: `authorizedEditors/${email}`, exists: editorSnap.exists(), data: editorSnap.exists() ? editorSnap.data() : null };
+        const adminSnap = await getDoc(doc(db, 'admins', email));
+        diag.adminsDoc = { path: `admins/${email}`, exists: adminSnap.exists(), data: adminSnap.exists() ? adminSnap.data() : null };
+      } else {
+        diag.note = 'currentUser was null at failure time - not signed in?';
+      }
+      if (context.activeSlug) {
+        const lockSnap = await getDoc(doc(db, 'kingdomLocks', context.activeSlug));
+        diag.kingdomLocksDoc = { path: `kingdomLocks/${context.activeSlug}`, exists: lockSnap.exists(), data: lockSnap.exists() ? lockSnap.data() : null };
+      }
+    } catch (diagErr) {
+      diag.diagnosticsError = diagErr.message;
+    }
+    try {
+      const blob = new Blob([JSON.stringify(diag, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `skybox-save-debug-${Date.now()}.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (downloadErr) {
+      console.error('Could not download debug info:', downloadErr, diag);
+    }
+  }
+
   // Filters (shared across all Kingdoms, not reset when switching tabs)
   let hiddenStatuses = new Set(["Good to Use"]); // "Good to Use" hidden by default - the summary table is meant to highlight problems, not everything
   let subareaFilter = "";
@@ -1745,6 +1790,7 @@
               setStatusLine(`Saved "${sb}" for ${subarea}.`, "connected");
             } catch (err) {
               setStatusLine("Error saving: " + err.message, "error");
+              downloadSaveDebugInfo({ kind: 'single-cell', activeSlug, subarea, sb, newValue }, err);
             }
           });
         });
@@ -1822,6 +1868,7 @@
       setStatusLine(`Applied "${newValue || '(none)'}" to ${cells.length} cell(s).`, "connected");
     } catch (err) {
       setStatusLine("Error applying bulk status: " + err.message, "error");
+      downloadSaveDebugInfo({ kind: 'bulk-apply', activeSlug, newValue, subareas: Object.keys(bySubarea), cellCount: cells.length }, err);
     }
 
     selectedCells.clear();
