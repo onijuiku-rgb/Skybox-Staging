@@ -1104,6 +1104,13 @@
       error: { code: err && err.code, message: err && err.message },
     };
     try {
+      // JSON.stringify + length catch an invisible/control character in
+      // the email or path segments that would look completely normal when
+      // printed but not compare equal in the rules (this project has hit
+      // exactly this kind of bug before with a stray \x01 in a file).
+      diag.emailRaw = { value: email, jsonStringified: JSON.stringify(email), length: email ? email.length : null };
+      if (context.activeSlug) diag.activeSlugRaw = { jsonStringified: JSON.stringify(context.activeSlug), length: context.activeSlug.length };
+      if (context.subarea) diag.subareaRaw = { jsonStringified: JSON.stringify(context.subarea), length: context.subarea.length };
       if (email) {
         const editorSnap = await getDoc(doc(db, 'authorizedEditors', email));
         diag.authorizedEditorsDoc = { path: `authorizedEditors/${email}`, exists: editorSnap.exists(), data: editorSnap.exists() ? editorSnap.data() : null };
@@ -1132,6 +1139,20 @@
       }
     } catch (diagErr) {
       diag.diagnosticsError = diagErr.message;
+    }
+    // A real write to a brand-new scratch document in the same Kingdom
+    // collection, using the exact same payload shape as a normal save.
+    // If this succeeds, the problem is specific to the document/subarea
+    // that just failed; if it ALSO gets denied, it's something about this
+    // user/Kingdom in general (or the rules themselves), not one doc.
+    if (context.activeSlug) {
+      const probeId = `__debugProbe_${Date.now()}__`;
+      try {
+        await setDoc(doc(db, context.activeSlug, probeId), { statuses: { probe: 'debug-test' } }, { merge: true });
+        diag.probeWrite = { path: `${context.activeSlug}/${probeId}`, result: 'SUCCEEDED - a fresh doc in the same collection saved fine' };
+      } catch (probeErr) {
+        diag.probeWrite = { path: `${context.activeSlug}/${probeId}`, result: 'FAILED', code: probeErr.code, message: probeErr.message };
+      }
     }
     try {
       const blob = new Blob([JSON.stringify(diag, null, 2)], { type: 'application/json' });
