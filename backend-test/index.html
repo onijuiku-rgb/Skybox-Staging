@@ -1111,6 +1111,21 @@
       diag.emailRaw = { value: email, jsonStringified: JSON.stringify(email), length: email ? email.length : null };
       if (context.activeSlug) diag.activeSlugRaw = { jsonStringified: JSON.stringify(context.activeSlug), length: context.activeSlug.length };
       if (context.subarea) diag.subareaRaw = { jsonStringified: JSON.stringify(context.subarea), length: context.subarea.length };
+      if (currentUser) {
+        // The security rules read request.auth.token.email - the raw ID
+        // token's claims - not currentUser.email off the profile object.
+        // Those are USUALLY the same, but a stale cached token could
+        // differ. Force a refresh so this reflects exactly what a fresh
+        // write would send.
+        const tokenResult = await currentUser.getIdTokenResult(true);
+        diag.idTokenClaims = {
+          email: tokenResult.claims.email,
+          email_verified: tokenResult.claims.email_verified,
+          matchesCurrentUserEmail: tokenResult.claims.email === currentUser.email,
+          issuedAtTime: tokenResult.issuedAtTime,
+          expirationTime: tokenResult.expirationTime,
+        };
+      }
       if (email) {
         const editorSnap = await getDoc(doc(db, 'authorizedEditors', email));
         diag.authorizedEditorsDoc = { path: `authorizedEditors/${email}`, exists: editorSnap.exists(), data: editorSnap.exists() ? editorSnap.data() : null };
@@ -1146,7 +1161,9 @@
     // that just failed; if it ALSO gets denied, it's something about this
     // user/Kingdom in general (or the rules themselves), not one doc.
     if (context.activeSlug) {
-      const probeId = `__debugProbe_${Date.now()}__`;
+      // Firestore reserves doc IDs matching /^__.*__$/ (invalid-argument,
+      // not a rules check) - keep the double underscores out of the ends.
+      const probeId = `zzDebugProbe_${Date.now()}`;
       try {
         await setDoc(doc(db, context.activeSlug, probeId), { statuses: { probe: 'debug-test' } }, { merge: true });
         diag.probeWrite = { path: `${context.activeSlug}/${probeId}`, result: 'SUCCEEDED - a fresh doc in the same collection saved fine' };
@@ -1824,6 +1841,21 @@
               await setDoc(doc(db, activeSlug, subarea), { statuses: { [sb]: newValue } }, { merge: true });
               setStatusLine(`Saved "${sb}" for ${subarea}.`, "connected");
             } catch (err) {
+              // A stale cached ID token could carry different claims than
+              // what currentUser.email shows - force a fresh token and
+              // retry once before giving up, in case that's the cause.
+              if (err.code === 'permission-denied' && currentUser) {
+                try {
+                  await currentUser.getIdToken(true);
+                  await setDoc(doc(db, activeSlug, subarea), { statuses: { [sb]: newValue } }, { merge: true });
+                  setStatusLine(`Saved "${sb}" for ${subarea}. (needed a fresh sign-in token)`, "connected");
+                  return;
+                } catch (retryErr) {
+                  setStatusLine("Error saving: " + retryErr.message, "error");
+                  downloadSaveDebugInfo({ kind: 'single-cell', activeSlug, subarea, sb, newValue, retriedAfterTokenRefresh: true }, retryErr);
+                  return;
+                }
+              }
               setStatusLine("Error saving: " + err.message, "error");
               downloadSaveDebugInfo({ kind: 'single-cell', activeSlug, subarea, sb, newValue }, err);
             }
