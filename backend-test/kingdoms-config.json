@@ -209,7 +209,6 @@
         "Ice Cave",
         "Invisible Maze",
         "Crazy Cap Shop",
-        "Employees Only!",
         "Slots",
         "Rumble Room",
         "Costume Room",
@@ -217,7 +216,7 @@
         "Bullet Bill Maze",
         "Freezing Waterway",
         "Sphynx Treasure Room",
-        "Transparent Platforms",
+        "Transparent Lifts",
         "The Strange Neighborhood",
         "Colossal Ruins"
       ]
@@ -329,8 +328,6 @@
         "Sphynx Treasure Room",
         "Bomb Valley",
         "Sinking Lava Island",
-        "Sandy Bottom",
-        "Rocket",
         "Spinning Maze"
       ]
     },
