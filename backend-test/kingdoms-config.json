@@ -222,18 +222,6 @@
       ]
     },
     {
-      "slug": "lakeKingdom",
-      "label": "Lake Kingdom",
-      "subareas": [
-        "HomeStage",
-        "Zipper Chasm",
-        "Platforming Playground",
-        "Crazy Cap Shop",
-        "Stone Block Puzzle Stage",
-        "Poison Waves"
-      ]
-    },
-    {
       "slug": "woodedKingdom",
       "label": "Wooded Kingdom",
       "subareas": [
@@ -252,6 +240,18 @@
         "Flooded Pipeway",
         "Flower Road",
         "Forest Kingdom Bonus Stage"
+      ]
+    },
+    {
+      "slug": "lakeKingdom",
+      "label": "Lake Kingdom",
+      "subareas": [
+        "HomeStage",
+        "Zipper Chasm",
+        "Platforming Playground",
+        "Crazy Cap Shop",
+        "Stone Block Puzzle Stage",
+        "Poison Waves"
       ]
     },
     {
@@ -389,6 +389,25 @@
       ]
     },
     {
+      "slug": "mushroomKingdom",
+      "label": "Mushroom Kingdom",
+      "subareas": [
+        "HomeStage",
+        "Crazy Cap Shop",
+        "Peach's Castle Interior",
+        "Classical Room",
+        "Sea of Clouds",
+        "2D Moving Wall",
+        "Knucklotec Rematch",
+        "Torkdrift Rematch",
+        "Mechawiggler Rematch",
+        "Mollusque-Lanceur Rematch",
+        "Cookatiel Rematch",
+        "Lord of Lightning Rematch",
+        "Mario Picture match"
+      ]
+    },
+    {
       "slug": "darkSide",
       "label": "Dark Side",
       "subareas": [
@@ -407,25 +426,6 @@
       "subareas": [
         "HomeStage",
         "Inside Culmina Crater"
-      ]
-    },
-    {
-      "slug": "mushroomKingdom",
-      "label": "Mushroom Kingdom",
-      "subareas": [
-        "HomeStage",
-        "Crazy Cap Shop",
-        "Peach's Castle Interior",
-        "Classical Room",
-        "Sea of Clouds",
-        "2D Moving Wall",
-        "Knucklotec Rematch",
-        "Torkdrift Rematch",
-        "Mechawiggler Rematch",
-        "Mollusque-Lanceur Rematch",
-        "Cookatiel Rematch",
-        "Lord of Lightning Rematch",
-        "Mario Picture match"
       ]
     }
   ]
