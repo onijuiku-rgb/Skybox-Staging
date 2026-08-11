@@ -500,6 +500,30 @@
   .subarea-lock-btn:hover { opacity: 1; border-color: #5865F2; }
   .subarea-lock-btn.locked { opacity: 1; }
 
+  .subarea-rename-btn {
+    background: none;
+    border: none;
+    font-size: 13px;
+    cursor: pointer;
+    padding: 2px 4px;
+    border-radius: 4px;
+    opacity: 0.6;
+    flex-shrink: 0;
+  }
+
+  .subarea-rename-btn:hover { opacity: 1; }
+
+  .skybox-rename-btn {
+    background: none;
+    border: none;
+    font-size: 11px;
+    cursor: pointer;
+    padding: 0 0 0 4px;
+    opacity: 0.5;
+  }
+
+  .skybox-rename-btn:hover { opacity: 1; }
+
   #kingdomLockBtn {
     background-color: #1a1a1a;
     border: 1px solid #3d3d3d;
@@ -908,6 +932,7 @@
     getDocs,
     setDoc,
     deleteDoc,
+    deleteField,
     onSnapshot,
     writeBatch
   } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
@@ -1560,7 +1585,10 @@
   function buildMainTableSkeleton() {
     const thead = document.getElementById('mainTableHead');
     let headHtml = '<tr><th>Subarea</th>';
-    SKYBOXES.forEach(sb => { headHtml += `<th>${sb}</th>`; });
+    SKYBOXES.forEach(sb => {
+      const wrench = isAdmin ? `<button type="button" class="skybox-rename-btn" data-sb="${sb}" title="Rename this skybox everywhere">&#128295;</button>` : '';
+      headHtml += `<th>${sb}${wrench}</th>`;
+    });
     headHtml += '</tr>';
     thead.innerHTML = headHtml;
 
@@ -1593,6 +1621,14 @@
           }
         });
         nameTd.appendChild(lockBtn);
+
+        const renameBtn = document.createElement('button');
+        renameBtn.type = 'button';
+        renameBtn.className = 'subarea-rename-btn';
+        renameBtn.dataset.subarea = subarea;
+        renameBtn.title = 'Rename this subarea';
+        renameBtn.textContent = '\u{1F527}';
+        nameTd.appendChild(renameBtn);
       }
 
       row.appendChild(nameTd);
@@ -1816,15 +1852,8 @@
   // subarea that was already renamed in the config before its Firestore
   // document was migrated (which otherwise leaves the old data orphaned
   // and invisible in the table).
-  document.getElementById('renameSubareaBtn').addEventListener('click', async () => {
-    if (!isAdmin || !activeSlug) return;
-
-    const oldId = (prompt(`Current document ID to rename, within "${activeLabel}":\n(this is the EXACT subarea name as stored in Firestore right now - check the Data tab if unsure)`) || '').trim();
-    if (!oldId) return;
-
-    const newId = (prompt(`Rename "${oldId}" to what?`) || '').trim();
+  async function renameSubareaDoc(oldId, newId) {
     if (!newId || newId === oldId) return;
-
     try {
       const oldRef = doc(db, activeSlug, oldId);
       const oldSnap = await getDoc(oldRef);
@@ -1847,6 +1876,84 @@
     } catch (err) {
       setStatusLine("Error renaming subarea: " + err.message, "error");
     }
+  }
+
+  document.getElementById('renameSubareaBtn').addEventListener('click', () => {
+    if (!isAdmin || !activeSlug) return;
+    const oldId = (prompt(`Current document ID to rename, within "${activeLabel}":\n(this is the EXACT subarea name as stored in Firestore right now - check the Data tab if unsure)`) || '').trim();
+    if (!oldId) return;
+    const newId = (prompt(`Rename "${oldId}" to what?`) || '').trim();
+    renameSubareaDoc(oldId, newId);
+  });
+
+  // Per-row wrench: same rename, but the old name is already known from
+  // the row, so it skips straight to "rename to what?" - added in
+  // buildMainTableSkeleton() next to the per-subarea lock button.
+  document.getElementById('mainTableBody').addEventListener('click', (e) => {
+    const btn = e.target.closest('.subarea-rename-btn');
+    if (!btn || !isAdmin) return;
+    e.stopPropagation();
+    const oldId = btn.dataset.subarea;
+    const newId = (prompt(`Rename "${oldId}" to what?`) || '').trim();
+    renameSubareaDoc(oldId, newId);
+  });
+
+  // ===================== RENAME SKYBOX (COLUMN) EVERYWHERE =====================
+  // Unlike a subarea, a skybox name isn't its own document - it's a field
+  // inside EVERY subarea document's statuses map, shared across all 17
+  // Kingdoms. Renaming one means finding every subarea doc, in every
+  // Kingdom, that has this skybox key set, and moving that value to the
+  // new key name - not just one document's worth of work.
+  async function renameSkyboxEverywhere(oldSb, newSb) {
+    if (!newSb || newSb === oldSb) return;
+
+    setStatusLine(`Scanning all Kingdoms for "${oldSb}"...`, "");
+    const affected = []; // { slug, subarea, value }
+    for (const kingdom of KINGDOMS) {
+      const snapshot = await getDocs(collection(db, kingdom.slug));
+      snapshot.forEach(docSnap => {
+        const statuses = docSnap.data().statuses || {};
+        if (Object.prototype.hasOwnProperty.call(statuses, oldSb)) {
+          affected.push({ slug: kingdom.slug, subarea: docSnap.id, value: statuses[oldSb] });
+        }
+      });
+    }
+
+    if (affected.length === 0) {
+      if (!confirm(`No subarea currently has "${oldSb}" set to anything, across any Kingdom. Rename it anyway (nothing to migrate, but future entries will use "${newSb}")?`)) return;
+    } else {
+      const kingdomCount = new Set(affected.map(a => a.slug)).size;
+      if (!confirm(`"${oldSb}" is set on ${affected.length} subarea document(s) across ${kingdomCount} Kingdom(s). Rename it to "${newSb}" everywhere? This moves the recorded status to the new field name and cannot be undone.`)) return;
+    }
+
+    try {
+      // Chunked into groups of 400 (Firestore's batch limit is 500
+      // operations) - well over what this app's data size needs today,
+      // but safe if the roster keeps growing.
+      for (let i = 0; i < affected.length; i += 400) {
+        const chunk = affected.slice(i, i + 400);
+        const batch = writeBatch(db);
+        chunk.forEach(({ slug, subarea, value }) => {
+          batch.update(doc(db, slug, subarea), {
+            [`statuses.${newSb}`]: value,
+            [`statuses.${oldSb}`]: deleteField(),
+          });
+        });
+        await batch.commit();
+      }
+      setStatusLine(`Renamed "${oldSb}" to "${newSb}" on ${affected.length} document(s). Remember to update kingdoms-config.json's skyboxes list to match.`, "connected");
+    } catch (err) {
+      setStatusLine("Error renaming skybox: " + err.message, "error");
+    }
+  }
+
+  document.getElementById('mainTableHead').addEventListener('click', (e) => {
+    const btn = e.target.closest('.skybox-rename-btn');
+    if (!btn || !isAdmin) return;
+    e.stopPropagation();
+    const oldSb = btn.dataset.sb;
+    const newSb = (prompt(`Rename skybox "${oldSb}" to what?\n(this updates it everywhere, across every Kingdom)`) || '').trim();
+    renameSkyboxEverywhere(oldSb, newSb);
   });
 
   // ===================== BULK MULTI-SELECT TOOLBAR =====================
