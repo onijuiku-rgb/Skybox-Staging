@@ -182,11 +182,11 @@
       "label": "Cap Kingdom",
       "subareas": [
         "HomeStage",
-        "Tower",
-        "Push Block Platforming",
-        "Flying over the Posion Tide",
-        "The Frog Pond",
-        "Rolling On and On"
+        "Inside Cap Tower",
+        "Push Block Peril",
+        "Poison Tides",
+        "Frog Pond",
+        "Precision Rolling"
       ]
     },
     {
@@ -195,10 +195,10 @@
       "subareas": [
         "HomeStage",
         "Dinosaur Nest",
-        "2D Chasm Platforming",
-        "Chain Chomp Shooting",
-        "The Mysterious Clouds",
-        "The Gusty Bridges"
+        "8-Bit Chasm Lifts",
+        "Nice Shots with Chain Chomps",
+        "Mysterious Clouds",
+        "Gusty Bridges"
       ]
     },
     {
@@ -207,18 +207,22 @@
       "subareas": [
         "HomeStage",
         "Ice Cave",
-        "Invisible Maze",
-        "Crazy Cap Shop",
-        "Slots",
-        "Rumble Room",
+        "The Invisible Maze",
+        "Crazy Cap Store",
+        "Tostarena Slots",
+        "Rumbling Floor House",
         "Costume Room",
-        "Jaxi Driver Course",
+        "Jaxi Driving",
         "Bullet Bill Maze",
         "Freezing Waterway",
-        "Sphynx Treasure Room",
+        "Sphynx Treasure Vault",
         "Transparent Lifts",
-        "The Strange Neighborhood",
-        "Colossal Ruins"
+        "Strange Neighborhood",
+        "Colossal Ruins",
+        "Inverted Pyramid: Lower Interior",
+        "Inverted Pyramid: Upper Interior",
+        "Deepest Underground",
+        "Underground Ruins"
       ]
     },
     {
@@ -227,19 +231,19 @@
       "subareas": [
         "HomeStage",
         "Deep Woods",
-        "Deep Woods: Red Leaf Maze",
-        "Deep Woods: Pond Area",
-        "Deep Woods: Treasure Chest",
-        "Deep Woods: Costume",
-        "In the Fog",
-        "Herding Sheep Bridge",
-        "Tank Elevator",
-        "The Clouds",
+        "Deep Woods Treasure Vault",
+        "Costume Room",
+        "Shards in the Fog",
+        "Herding Sheep",
+        "Crowded Elevator",
+        "Walking on Clouds",
         "Breakdown Road",
         "Invisible Road",
-        "Flooded Pipeway",
+        "Flooding Pipeway",
         "Flower Road",
-        "Forest Kingdom Bonus Stage"
+        "Spinning-Platforms Treasure Vault",
+        "Secret Flower Field",
+        "Sky Garden Tower"
       ]
     },
     {
@@ -247,11 +251,11 @@
       "label": "Lake Kingdom",
       "subareas": [
         "HomeStage",
-        "Zipper Chasm",
-        "Platforming Playground",
-        "Crazy Cap Shop",
-        "Stone Block Puzzle Stage",
-        "Poison Waves"
+        "Unzipping the Chasm",
+        "Jump, Grab, Cling, Climb",
+        "Crazy Cap Store",
+        "Puzzle Room",
+        "Waves of Poison"
       ]
     },
     {
@@ -259,8 +263,8 @@
       "label": "Cloud Kingdom",
       "subareas": [
         "HomeStage",
-        "The Cube",
-        "Goomba Picture Match"
+        "2D Cube",
+        "Picture Match"
       ]
     },
     {
@@ -268,9 +272,9 @@
       "label": "Lost Kingdom",
       "subareas": [
         "HomeStage",
-        "Poison Swamp",
-        "Crazy Cap Shop",
-        "Klepto's Hot Nest"
+        "Stretch and Traverse the Jungle",
+        "Crazy Cap Store",
+        "Klepto 2 - Lava Boogaloo"
       ]
     },
     {
@@ -278,22 +282,23 @@
       "label": "Metro Kingdom",
       "subareas": [
         "HomeStage",
-        "New Donk City Hall",
-        "Crazy Cap Shop",
-        "Escape!",
-        "Pole Challenge",
-        "Under Siege",
-        "Private Room",
-        "Big Screen",
-        "Slots",
-        "The Crowd",
-        "Wire Station",
-        "High Rise",
-        "Pitch-Black Island",
+        "Inside New Donk City Tower",
+        "Crazy Cap Store",
+        "Scooter Escape!",
+        "Bullet Billding",
+        "Shards Under Siege",
+        "Rainbow Notes",
+        "On the Big Screen",
+        "Metro Kingdom Slots",
+        "Crowded Alleyway",
+        "Rewiring the Neighborhood",
+        "Swinging Along the High-Rises",
+        "Pitchblack Mountain",
         "Swinging Scaffolding",
-        "Motor Scooter Stuntdriving",
-        "Rotating Maze",
-        "RC Car"
+        "Scooter Daredevil",
+        "Rotating Maze Shards",
+        "RC Race",
+        "Sewers"
       ]
     },
     {
@@ -301,18 +306,17 @@
       "label": "Snow Kingdom",
       "subareas": [
         "HomeStage",
-        "Shiveria",
-        "Typhoo Challenge",
-        "Freezing Water Platforming",
-        "Cold Water Track",
-        "Iceburn Circuit",
+        "Shiveria Town",
+        "Ty-Foo Sliding Puzzle",
+        "Freezing Water",
+        "Dashing Over Cold Water",
         "Flower Road",
         "Tracewalking",
-        "High-Altitude Flowers",
-        "Cold Room",
-        "Bound Bowl A Rank",
-        "Bound Bowl S Rank",
-        "Crazy Cap Shop"
+        "Spinning Above the Clouds",
+        "Shards in the Cold Room",
+        "Class A Lobby",
+        "Class S Lobby",
+        "Crazy Cap Store"
       ]
     },
     {
@@ -320,15 +324,16 @@
       "label": "Seaside Kingdom",
       "subareas": [
         "HomeStage",
-        "Sea Cave (Enter)",
-        "Rumble Room",
-        "Cloud Sea",
+        "Underwater Tunnel",
+        "Rumbling Floor Cave",
+        "A Sea of Clouds",
         "Costume Room",
-        "Narrow Valley",
-        "Sphynx Treasure Room",
-        "Bomb Valley",
-        "Sinking Lava Island",
-        "Spinning Maze"
+        "Flying Through the Narrow Valley",
+        "Sphynx Treasure Vault",
+        "Stop, Poke, and Roll",
+        "Stretching Up the Sinking Island",
+        "Spinning Maze",
+        "Wriggling Power Moon"
       ]
     },
     {
@@ -337,17 +342,17 @@
       "subareas": [
         "HomeStage",
         "Magma Swamp",
-        "Fork Flickin",
-        "Cheese Rocks",
-        "Luncheon Kingdom Bonus",
-        "Slots",
-        "Crazy Cap Shop",
-        "Simmer Room",
+        "Fork-Flickin to the Summit",
+        "Shards in the Cheese Rocks",
+        "Luncheon Kingdom Slots",
+        "Crazy Cap Store(?)",
+        "Simmering in the Kitchen",
         "Spinning Athletics",
-        "Lava Islands",
-        "Volcano Cave",
-        "Gear Steps",
-        "Narrow Magma Path"
+        "Lava Island Fly-By",
+        "Volcano Cave Cruising",
+        "Blazing Above the Gears",
+        "Narrow Magma Path",
+        "Luncheon Treasure Vault(?)"
       ]
     },
     {
@@ -356,7 +361,7 @@
       "subareas": [
         "HomeStage",
         "Mummy Army",
-        "Roullete Tower"
+        "Roulette Tower"
       ]
     },
     {
@@ -364,12 +369,12 @@
       "label": "Bowsers Kingdom",
       "subareas": [
         "HomeStage",
-        "Jizo's Stupid Challenge",
-        "Crazy Cap Shop",
-        "Folding Screen",
-        "Bowser Bonus Stage",
+        "Jizo's Great Adventure",
+        "Crazy Cap Store",
+        "Scene in the Folding Screen",
+        "Bowser's Kingdom Treasure Vault",
         "Spinning Tower",
-        "Cloud Dash Track",
+        "Dashing Above the Clouds",
         "Hexagon Tower",
         "Wooden Tower"
       ]
@@ -379,13 +384,14 @@
       "label": "Moon Kingdom",
       "subareas": [
         "HomeStage",
-        "Moon Cave",
-        "Wedding Hall",
-        "Bowser Arena",
-        "2D Galaxy",
-        "Crazy Cap Shop",
+        "Underground Caverns",
+        "Wedding Room",
+        "Bowser Fight",
+        "8-Bit Galaxy",
+        "Crazy Cap Store",
         "Giant Swings",
-        "Sphynx Treasure Room"
+        "Moon Kingdom Treasure Vault",
+        "Bowser Escape"
       ]
     },
     {
@@ -393,18 +399,24 @@
       "label": "Mushroom Kingdom",
       "subareas": [
         "HomeStage",
-        "Crazy Cap Shop",
-        "Peach's Castle Interior",
-        "Classical Room",
-        "Sea of Clouds",
-        "2D Moving Wall",
-        "Knucklotec Rematch",
-        "Torkdrift Rematch",
-        "Mechawiggler Rematch",
-        "Mollusque-Lanceur Rematch",
-        "Cookatiel Rematch",
-        "Lord of Lightning Rematch",
-        "Mario Picture match"
+        "Crazy Cap Store",
+        "Peach's Castle",
+        "Castle Courtyard 64",
+        "Yoshi in the Sea of Clouds",
+        "8-Bit Bullet Bills",
+        "Painting Room: Knucklotec",
+        "Painting Room: Torkdrift",
+        "Painting Room: Mechawiggler",
+        "Painting Room: Mollusque-Lanceur",
+        "Painting Room: Cookatiel",
+        "Painting Room: Lord of Lightning",
+        "Picture Match",
+        "Knucklotec Boss Re-fight",
+        "Torkdrift Boss Re-fight",
+        "Mechawiggler Boss Re-fight",
+        "Mollusque-Lanceur Boss Re-fight",
+        "Cookatiel Boss Re-fight",
+        "Lord of Lightning Boss Re-fight"
       ]
     },
     {
@@ -412,12 +424,13 @@
       "label": "Dark Side",
       "subareas": [
         "HomeStage",
-        "Revisiting Breakdown Road",
-        "Revisiting Invisible Road",
-        "Revisiting Vanishing Road",
+        "Breakdown Road Capless",
+        "Invisible Road Capless",
+        "Vanishing Road Capless",
         "Yoshi Under Siege",
-        "Yoshi's Sinking Island",
-        "Yoshi in Magma Swamp"
+        "Yoshi on the Sinking Island",
+        "Yoshi's Magma Swamp",
+        "Rabbit Ridge Tower"
       ]
     },
     {

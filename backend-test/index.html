@@ -556,6 +556,20 @@
 
   #renameSubareaBtn:hover { border-color: #5865F2; color: #ccc; }
 
+  #bulkMigrateBtn {
+    background-color: #2a1808;
+    border: 1px solid #d97706;
+    color: #d97706;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  #bulkMigrateBtn:hover { background-color: #3a2408; }
+
   /* ===================== BULK MULTI-SELECT TOOLBAR ===================== */
   .bulk-toolbar {
     position: fixed;
@@ -895,6 +909,7 @@
     <div class="progress-badge" id="progressBadge"></div>
     <button id="kingdomLockBtn" style="display:none;"></button>
     <button id="renameSubareaBtn" style="display:none;">&#128295; Rename Subarea...</button>
+    <button id="bulkMigrateBtn" style="display:none;" title="One-time: renames/removes subareas to match the new mod build's zone list">&#128640; Run New-Build Migration (one-time)</button>
     <div class="summary-controls">
       <button id="toggleFiltersBtn">Filters</button>
       <select class="summary-select-filter" id="subareaFilterSelect">
@@ -1826,6 +1841,7 @@
     const btn = document.getElementById('kingdomLockBtn');
     const renameBtn = document.getElementById('renameSubareaBtn');
     renameBtn.style.display = isAdmin ? 'inline-block' : 'none';
+    document.getElementById('bulkMigrateBtn').style.display = isAdmin ? 'inline-block' : 'none';
     if (!isAdmin) { btn.style.display = 'none'; return; }
 
     btn.style.display = 'inline-block';
@@ -1896,6 +1912,60 @@
     const oldId = btn.dataset.subarea;
     const newId = (prompt(`Rename "${oldId}" to what?`) || '').trim();
     renameSubareaDoc(oldId, newId);
+  });
+
+  // ===================== ONE-TIME: NEW MOD BUILD SUBAREA MIGRATION =====================
+  // Renames/removes subarea documents across every Kingdom to match the
+  // new mod build's authoritative zone list (see kingdoms-config.json for
+  // the matching label changes). Safe to delete this whole block, the
+  // button, and its CSS once it's been run - it's a one-shot migration,
+  // not an ongoing feature.
+  const BULK_RENAME_MAP = {"capKingdom": [["Tower", "Inside Cap Tower"], ["Push Block Platforming", "Push Block Peril"], ["Flying over the Posion Tide", "Poison Tides"], ["The Frog Pond", "Frog Pond"], ["Rolling On and On", "Precision Rolling"]], "cascadeKingdom": [["2D Chasm Platforming", "8-Bit Chasm Lifts"], ["Chain Chomp Shooting", "Nice Shots with Chain Chomps"], ["The Mysterious Clouds", "Mysterious Clouds"], ["The Gusty Bridges", "Gusty Bridges"]], "sandKingdom": [["Invisible Maze", "The Invisible Maze"], ["Crazy Cap Shop", "Crazy Cap Store"], ["Slots", "Tostarena Slots"], ["Rumble Room", "Rumbling Floor House"], ["Jaxi Driver Course", "Jaxi Driving"], ["Sphynx Treasure Room", "Sphynx Treasure Vault"], ["The Strange Neighborhood", "Strange Neighborhood"]], "woodedKingdom": [["Deep Woods: Treasure Chest", "Deep Woods Treasure Vault"], ["Deep Woods: Costume", "Costume Room"], ["In the Fog", "Shards in the Fog"], ["Herding Sheep Bridge", "Herding Sheep"], ["Tank Elevator", "Crowded Elevator"], ["The Clouds", "Walking on Clouds"], ["Flooded Pipeway", "Flooding Pipeway"], ["Forest Kingdom Bonus Stage", "Spinning-Platforms Treasure Vault"]], "lakeKingdom": [["Zipper Chasm", "Unzipping the Chasm"], ["Platforming Playground", "Jump, Grab, Cling, Climb"], ["Crazy Cap Shop", "Crazy Cap Store"], ["Stone Block Puzzle Stage", "Puzzle Room"], ["Poison Waves", "Waves of Poison"]], "cloudKingdom": [["The Cube", "2D Cube"], ["Goomba Picture Match", "Picture Match"]], "lostKingdom": [["Poison Swamp", "Stretch and Traverse the Jungle"], ["Crazy Cap Shop", "Crazy Cap Store"], ["Klepto's Hot Nest", "Klepto 2 - Lava Boogaloo"]], "metroKingdom": [["New Donk City Hall", "Inside New Donk City Tower"], ["Crazy Cap Shop", "Crazy Cap Store"], ["Escape!", "Scooter Escape!"], ["Pole Challenge", "Bullet Billding"], ["Under Siege", "Shards Under Siege"], ["Private Room", "Rainbow Notes"], ["Big Screen", "On the Big Screen"], ["Slots", "Metro Kingdom Slots"], ["The Crowd", "Crowded Alleyway"], ["Wire Station", "Rewiring the Neighborhood"], ["High Rise", "Swinging Along the High-Rises"], ["Pitch-Black Island", "Pitchblack Mountain"], ["Motor Scooter Stuntdriving", "Scooter Daredevil"], ["Rotating Maze", "Rotating Maze Shards"], ["RC Car", "RC Race"]], "snowKingdom": [["Shiveria", "Shiveria Town"], ["Typhoo Challenge", "Ty-Foo Sliding Puzzle"], ["Freezing Water Platforming", "Freezing Water"], ["Cold Water Track", "Dashing Over Cold Water"], ["High-Altitude Flowers", "Spinning Above the Clouds"], ["Cold Room", "Shards in the Cold Room"], ["Bound Bowl A Rank", "Class A Lobby"], ["Bound Bowl S Rank", "Class S Lobby"], ["Crazy Cap Shop", "Crazy Cap Store"]], "seasideKingdom": [["Sea Cave (Enter)", "Underwater Tunnel"], ["Rumble Room", "Rumbling Floor Cave"], ["Cloud Sea", "A Sea of Clouds"], ["Narrow Valley", "Flying Through the Narrow Valley"], ["Sphynx Treasure Room", "Sphynx Treasure Vault"], ["Bomb Valley", "Stop, Poke, and Roll"], ["Sinking Lava Island", "Stretching Up the Sinking Island"]], "luncheonKingdom": [["Fork Flickin", "Fork-Flickin to the Summit"], ["Cheese Rocks", "Shards in the Cheese Rocks"], ["Slots", "Luncheon Kingdom Slots"], ["Crazy Cap Shop", "Crazy Cap Store(?)"], ["Simmer Room", "Simmering in the Kitchen"], ["Lava Islands", "Lava Island Fly-By"], ["Volcano Cave", "Volcano Cave Cruising"], ["Gear Steps", "Blazing Above the Gears"]], "ruinedKingdom": [["Roullete Tower", "Roulette Tower"]], "bowsersKingdom": [["Jizo's Stupid Challenge", "Jizo's Great Adventure"], ["Crazy Cap Shop", "Crazy Cap Store"], ["Folding Screen", "Scene in the Folding Screen"], ["Bowser Bonus Stage", "Bowser's Kingdom Treasure Vault"], ["Cloud Dash Track", "Dashing Above the Clouds"]], "moonKingdom": [["Moon Cave", "Underground Caverns"], ["Wedding Hall", "Wedding Room"], ["Bowser Arena", "Bowser Fight"], ["2D Galaxy", "8-Bit Galaxy"], ["Crazy Cap Shop", "Crazy Cap Store"], ["Sphynx Treasure Room", "Moon Kingdom Treasure Vault"]], "mushroomKingdom": [["Crazy Cap Shop", "Crazy Cap Store"], ["Peach's Castle Interior", "Peach's Castle"], ["Classical Room", "Castle Courtyard 64"], ["Sea of Clouds", "Yoshi in the Sea of Clouds"], ["2D Moving Wall", "8-Bit Bullet Bills"], ["Knucklotec Rematch", "Painting Room: Knucklotec"], ["Torkdrift Rematch", "Painting Room: Torkdrift"], ["Mechawiggler Rematch", "Painting Room: Mechawiggler"], ["Mollusque-Lanceur Rematch", "Painting Room: Mollusque-Lanceur"], ["Cookatiel Rematch", "Painting Room: Cookatiel"], ["Lord of Lightning Rematch", "Painting Room: Lord of Lightning"], ["Mario Picture match", "Picture Match"]], "darkSide": [["Revisiting Breakdown Road", "Breakdown Road Capless"], ["Revisiting Invisible Road", "Invisible Road Capless"], ["Revisiting Vanishing Road", "Vanishing Road Capless"], ["Yoshi's Sinking Island", "Yoshi on the Sinking Island"], ["Yoshi in Magma Swamp", "Yoshi's Magma Swamp"]]};
+  const BULK_REMOVAL_MAP = {"woodedKingdom": ["Deep Woods: Red Leaf Maze", "Deep Woods: Pond Area"], "snowKingdom": ["Iceburn Circuit"], "luncheonKingdom": ["Luncheon Kingdom Bonus"]};
+
+  document.getElementById('bulkMigrateBtn').addEventListener('click', async () => {
+    if (!isAdmin) return;
+    const renameCount = Object.values(BULK_RENAME_MAP).reduce((n, arr) => n + arr.length, 0);
+    const removeCount = Object.values(BULK_REMOVAL_MAP).reduce((n, arr) => n + arr.length, 0);
+    if (!confirm(`This renames ${renameCount} subarea documents and deletes ${removeCount} redundant ones, across every Kingdom, to match the new mod build's zone list. This cannot be undone - continue?`)) return;
+    if (!confirm(`Really sure? This is a one-time migration and shouldn't be run twice.`)) return;
+
+    setStatusLine('Running bulk subarea migration - this will take a bit...', '');
+    const errors = [];
+    let done = 0;
+
+    for (const [slug, pairs] of Object.entries(BULK_RENAME_MAP)) {
+      for (const [oldId, newId] of pairs) {
+        try {
+          const oldRef = doc(db, slug, oldId);
+          const oldSnap = await getDoc(oldRef);
+          if (!oldSnap.exists()) { done++; continue; } // nothing recorded yet - nothing to migrate
+          await setDoc(doc(db, slug, newId), oldSnap.data());
+          await deleteDoc(oldRef);
+          done++;
+        } catch (err) {
+          errors.push(`${slug}/${oldId} -> ${newId}: ${err.message}`);
+        }
+      }
+    }
+
+    for (const [slug, olds] of Object.entries(BULK_REMOVAL_MAP)) {
+      for (const oldId of olds) {
+        try {
+          await deleteDoc(doc(db, slug, oldId));
+          done++;
+        } catch (err) {
+          errors.push(`${slug}/${oldId} (removal): ${err.message}`);
+        }
+      }
+    }
+
+    if (errors.length) {
+      console.error('Bulk subarea migration errors:', errors);
+      setStatusLine(`Migration finished with ${errors.length} error(s) - see the browser console for details. ${done} operation(s) succeeded.`, "error");
+    } else {
+      setStatusLine(`Bulk migration complete - ${done} operation(s) succeeded.`, "connected");
+    }
   });
 
   // ===================== RENAME SKYBOX (COLUMN) EVERYWHERE =====================
