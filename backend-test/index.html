@@ -518,6 +518,20 @@
     border-color: #d97706;
   }
 
+  #renameSubareaBtn {
+    background-color: #1a1a1a;
+    border: 1px solid #3d3d3d;
+    color: #999;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  #renameSubareaBtn:hover { border-color: #5865F2; color: #ccc; }
+
   /* ===================== BULK MULTI-SELECT TOOLBAR ===================== */
   .bulk-toolbar {
     position: fixed;
@@ -856,6 +870,7 @@
     <h2>&#9888; Issues &amp; Actionable Skyboxes (<span id="activeKingdomName">-</span>)</h2>
     <div class="progress-badge" id="progressBadge"></div>
     <button id="kingdomLockBtn" style="display:none;"></button>
+    <button id="renameSubareaBtn" style="display:none;">&#128295; Rename Subarea...</button>
     <div class="summary-controls">
       <button id="toggleFiltersBtn">Filters</button>
       <select class="summary-select-filter" id="subareaFilterSelect">
@@ -892,6 +907,7 @@
     getDoc,
     getDocs,
     setDoc,
+    deleteDoc,
     onSnapshot,
     writeBatch
   } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
@@ -1772,6 +1788,8 @@
   // ===================== KINGDOM-LEVEL LOCK (admins only) =====================
   function renderKingdomLockButton() {
     const btn = document.getElementById('kingdomLockBtn');
+    const renameBtn = document.getElementById('renameSubareaBtn');
+    renameBtn.style.display = isAdmin ? 'inline-block' : 'none';
     if (!isAdmin) { btn.style.display = 'none'; return; }
 
     btn.style.display = 'inline-block';
@@ -1787,6 +1805,47 @@
       await setDoc(doc(db, 'kingdomLocks', activeSlug), { kingdomLocked: !locked }, { merge: true });
     } catch (err) {
       setStatusLine("Error toggling Kingdom lock: " + err.message, "error");
+    }
+  });
+
+  // Renames a subarea's Firestore document (Firestore has no native
+  // rename - a document's ID is part of its path) by copying its data to
+  // a new document under the new ID, then deleting the old one. Works on
+  // ANY document ID in the active Kingdom's collection, not just ones
+  // currently listed in kingdoms-config.json, so it can also fix a
+  // subarea that was already renamed in the config before its Firestore
+  // document was migrated (which otherwise leaves the old data orphaned
+  // and invisible in the table).
+  document.getElementById('renameSubareaBtn').addEventListener('click', async () => {
+    if (!isAdmin || !activeSlug) return;
+
+    const oldId = (prompt(`Current document ID to rename, within "${activeLabel}":\n(this is the EXACT subarea name as stored in Firestore right now - check the Data tab if unsure)`) || '').trim();
+    if (!oldId) return;
+
+    const newId = (prompt(`Rename "${oldId}" to what?`) || '').trim();
+    if (!newId || newId === oldId) return;
+
+    try {
+      const oldRef = doc(db, activeSlug, oldId);
+      const oldSnap = await getDoc(oldRef);
+      if (!oldSnap.exists()) {
+        setStatusLine(`No document found for "${oldId}" in ${activeLabel} - nothing to rename.`, "error");
+        return;
+      }
+
+      const newRef = doc(db, activeSlug, newId);
+      const newSnap = await getDoc(newRef);
+      if (newSnap.exists()) {
+        if (!confirm(`"${newId}" already has data. Overwrite it with "${oldId}"'s data? This cannot be undone.`)) return;
+      } else {
+        if (!confirm(`Rename "${oldId}" to "${newId}" in ${activeLabel}? This copies its data to the new name and deletes the old document. This cannot be undone.`)) return;
+      }
+
+      await setDoc(newRef, oldSnap.data());
+      await deleteDoc(oldRef);
+      setStatusLine(`Renamed "${oldId}" to "${newId}" in ${activeLabel}. Remember to update kingdoms-config.json to match, if you haven't already.`, "connected");
+    } catch (err) {
+      setStatusLine("Error renaming subarea: " + err.message, "error");
     }
   });
 
